@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusBuddy - Your Ultimate Travel Partner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#1e2d3b', 
+                        'primary-accent': '#3b82f6', // Blue-500
+                        'primary-light': '#60a5fa', // Blue-400
+                        'surface-card': '#f1f5f9', 
+                        'success': '#10b981',
+                        'danger': '#ef4444', 
+                        'warning': '#f59e0b',
+                        'tier-blue': '#3b82f6',
+                        'tier-silver': '#94a3b8',
+                        'tier-gold': '#f59e0b',
+                    },
+                    boxShadow: {
+                        '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
+                        'inner-lg': 'inset 0 4px 12px 0 rgb(0 0 0 / 0.05)'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        slideInUp: { '0%': { transform: 'translateY(100%)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        pulse: { '0%, 100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.05)' } },
+                        bounceSlow: { '0%, 100%': { transform: 'translateY(-5%)' }, '50%': { transform: 'translateY(0)' } },
+                        wiggle: { '0%, 100%': { transform: 'rotate(-3deg)' }, '50%': { transform: 'rotate(3deg)' } },
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'slide-in-up': 'slideInUp 0.5s ease-out forwards',
+                        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounceSlow 3s infinite ease-in-out', // Slower bounce
+                        'wiggle-slow': 'wiggle 2s infinite ease-in-out',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .seat {
+            border: 1px solid #bdc3c7; border-radius: 8px; padding: 4px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease; background-color: #ffffff; min-width: 50px;
+        }
+        .seat-sleeper { width: 90px; }
+        .seat-icon { font-size: 20px; color: #34495e; }
+        .seat-price { font-size: 11px; font-weight: 600; color: #2c3e50; }
+        .seat.available:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .seat.selected { border: 2px solid #3b82f6; background-color: #dbeafe; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .seat.booked, .seat.booked .seat-icon, .seat.booked .seat-price {
+            background-color: #e5e7eb; border-color: #d1d5db; color: #9ca3af; cursor: not-allowed;
+        }
+        .seat-women, .seat-women .seat-icon, .seat-women.booked .seat-icon { color: #ec4899; }
+        .seat-women.available:hover { border-color: #ec4899; }
+        .seat-women.selected { border: 2px solid #ec4899; background-color: #fce7f3; }
+
+        #hero-section {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1e2d3b 0%, #334155 100%); /* Fallback background */
+        }
+        #hero-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: 0;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            filter: brightness(0.6); /* Darken video to make text more readable */
+        }
+        #hero-content {
+            position: relative; /* Ensure content is above the video */
+            z-index: 1;
+        }
+
+        .input-modern {
+            width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border-radius: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff; transition: background-color 0.3s, border-color 0.3s;
+        }
+        .input-modern:focus { outline: none; background-color: rgba(255, 255, 255, 0.2); border-color: #60a5fa; }
+        .input-modern::placeholder { color: rgba(255, 255, 255, 0.5); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .tab-button.active { border-color: #3b82f6; color: #3b82f6; font-weight: 600; background-color: #eff6ff; }
+        .payment-method.selected { border-color: #3b82f6; background-color: #eff6ff; box-shadow: 0 0 8px rgba(59, 130, 246, 0.3); }
+        .filter-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+        
+        /* Tracking animation styles */
+        #tracking-line {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        #tracking-bus-icon {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #1e2d3b;
+            transition: left 2s linear;
+        }
+        .checkpoint {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background-color: #a0aec0;
+            border-radius: 50%;
+        }
+        .checkpoint.active {
+            background-color: #3b82f6;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 28px;
+            bottom: 0;
+            width: 2px;
+            background-color: #e2e8f0;
+        }
+         .timeline-item:last-child::before {
+            display: none;
+        }
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+    </style>
+</head>
+<body class="bg-slate-50 text-primary-dark dark:bg-slate-900 dark:text-slate-300">
+    <script>
+        // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-system: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+    <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-40 dark:bg-slate-800/90 dark:border-b dark:border-slate-700">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="#" class="flex items-center space-x-2">
+                <svg class="h-10 w-10" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="#3b82f6"/>
+                    <path d="M 30 70 C 30 50, 70 50, 70 70" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <path d="M 30 70 Q 50 80, 70 70" stroke="#1e2d3b" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <path d="M 40 45 L 60 45" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <text x="32" y="40" font-family="Inter, sans-serif" font-size="24" fill="#ffffff" font-weight="bold">B</text>
+                </svg>
+                <h1 class="text-3xl font-extrabold text-primary-dark tracking-tighter dark:text-white">Bus<span class="text-primary-accent">Buddy</span></h1>
+            </a>
+            <nav class="space-x-4 hidden md:flex text-sm font-semibold text-gray-600 items-center dark:text-slate-300">
+                <a href="#" class="hover:text-primary-accent transition-colors dark:hover:text-primary-light" data-i18n-key="nav_bus_tickets"><i class="fas fa-ticket-alt mr-2"></i>Bus Tickets</a>
+                <div class="flex items-center" id="customer-care-numbers">
+                    <i class="fas fa-headset mr-2 text-primary-accent"></i>
+                    <div class="text-xs">
+                        <p class="font-bold" data-i18n-key="nav_helpline">24/7 Helpline</p>
+                        <p id="care-number-1"></p>
+                    </div>
+                </div>
+                <div class="relative dropdown">
+                    <button class="flex items-center space-x-1 p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <i class="fas fa-globe"></i>
+                        <span id="current-lang">EN</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div id="language-menu" class="dropdown-menu absolute right-0 mt-2 w-28 bg-white dark:bg-slate-800 rounded-md shadow-lg py-1 hidden z-20">
+                        <a href="#" class="lang-option block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700" data-lang="en">English</a>
+                        <a href="#" class="lang-option block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700" data-lang="hi">हिन्दी</a>
+                        <a href="#" class="lang-option block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700" data-lang="ta">தமிழ்</a>
+                    </div>
+                </div>
+                 <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <i id="theme-toggle-dark-icon" class="fas fa-moon hidden"></i>
+                    <i id="theme-toggle-light-icon" class="fas fa-sun hidden"></i>
+                </button>
+                <div id="auth-container">
+                    <button id="login-signup-btn" class="font-bold py-2 px-4 rounded-lg bg-primary-accent text-white hover:bg-primary-light" data-i18n-key="nav_login_signup">Login / Sign Up</button>
+                    <div id="user-dropdown" class="hidden relative dropdown">
+                        <button class="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <span id="user-avatar" class="w-8 h-8 rounded-full bg-primary-light text-white flex items-center justify-center font-bold"></span>
+                            <span id="user-name-display"></span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg py-1 hidden z-20">
+                            <a href="#" id="my-bookings-btn" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700" data-i18n-key="nav_my_bookings">My Bookings</a>
+                            <a href="#" id="my-rewards-btn" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700" data-i18n-key="nav_my_rewards">My Rewards</a>
+                            <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700" data-i18n-key="nav_logout">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        <div id="hero-section" class="p-6 md:p-12 rounded-2xl shadow-3xl text-white mb-10 min-h-[450px] flex items-center justify-center">
+            <video autoplay loop muted playsinline id="hero-video">
+                <source src="https://assets.mixkit.co/videos/preview/mixkit-urban-traffic-on-the-road-at-night-2849-large.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+
+            <div id="hero-content" class="max-w-4xl mx-auto text-center">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-3 tracking-tight drop-shadow-lg" data-i18n-key="hero_title">Your Journey, Our Priority.</h2>
+                <p class="text-lg mb-8 opacity-90 font-light drop-shadow-md" data-i18n-key="hero_subtitle">Find the best bus deals across India, effortlessly.</p>
+            
+                <form id="search-form" class="grid grid-cols-2 md:grid-cols-5 gap-4 items-end bg-white/10 backdrop-blur-md p-5 rounded-xl border border-white/20">
+                    <div class="col-span-2 md:col-span-1"><label for="from-city" class="block text-sm font-medium mb-1 opacity-80" data-i18n-key="form_from">From</label><div class="relative"><i class="fas fa-location-dot absolute left-3 top-1/2 -translate-y-1/2 text-primary-light"></i><input type="text" id="from-city" list="cities" class="input-modern" placeholder="Origin" required data-i18n-placeholder-key="form_origin"></div></div>
+                    <div class="col-span-2 md:col-span-1"><label for="to-city" class="block text-sm font-medium mb-1 opacity-80" data-i18n-key="form_to">To</label><div class="relative"><i class="fas fa-location-dot absolute left-3 top-1/2 -translate-y-1/2 text-primary-light"></i><input type="text" id="to-city" list="cities" class="input-modern" placeholder="Destination" required data-i18n-placeholder-key="form_destination"></div></div>
+                    <div class="col-span-2 md:col-span-1"><label for="travel-date" class="block text-sm font-medium mb-1 opacity-80" data-i18n-key="form_date">Date</label><div class="relative"><i class="fas fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-primary-light"></i><input type="date" id="travel-date" class="input-modern" required></div></div>
+                    <div class="col-span-1"><label for="travellers" class="block text-sm font-medium mb-1 opacity-80" data-i18n-key="form_pax">Pax</label><div class="relative"><i class="fas fa-users absolute left-3 top-1/2 -translate-y-1/2 text-primary-light"></i><input type="number" id="travellers" value="1" min="1" max="10" class="input-modern text-center" required></div></div>
+                    <div class="col-span-2 md:col-span-1"><button type="submit" class="w-full p-3 font-semibold rounded-lg bg-primary-light hover:bg-primary-accent transition-all duration-300 text-white shadow-lg shadow-primary-accent/50 flex items-center justify-center space-x-2 transform hover:scale-105"><i class="fas fa-magnifying-glass"></i><span data-i18n-key="form_search">Search</span></button></div>
+                </form>
+                <datalist id="cities"></datalist>
+                
+                <div class="max-w-4xl mx-auto mt-8 flex flex-wrap justify-center gap-6 text-sm">
+                    <div class="flex flex-col items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm shadow-md transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-shield-alt text-4xl text-green-400 mb-2 animate-bounce-slow"></i>
+                        <p class="font-semibold" data-i18n-key="perk_safe">Safe & Secure</p>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm shadow-md transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-bolt text-4xl text-yellow-400 mb-2 animate-pulse-slow"></i>
+                        <p class="font-semibold" data-i18n-key="perk_fast">Fast Booking</p>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm shadow-md transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-headset text-4xl text-blue-400 mb-2 animate-wiggle-slow"></i>
+                        <p class="font-semibold" data-i18n-key="perk_support">24/7 Support</p>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm shadow-md transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-tag text-4xl text-red-400 mb-2 animate-pulse"></i>
+                        <p class="font-semibold" data-i18n-key="perk_prices">Best Prices</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="results-area" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                 <h3 class="text-2xl font-bold text-primary-dark dark:text-white">
+                    <span data-i18n-key="results_title">Showing buses for </span>
+                    <span id="route-display" class="text-primary-accent"></span> 
+                    <span id="results-date-display" class="text-lg font-normal text-gray-500"></span>
+                </h3>
+                 <div id="weather-widget" class="text-right"></div>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6">
+                <aside class="w-full lg:w-1/4">
+                    <div class="bg-white p-4 rounded-xl shadow-lg sticky top-24 dark:bg-slate-800">
+                        <div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-slate-700">
+                            <h4 class="text-lg font-bold dark:text-white" data-i18n-key="filter_title">Filter By</h4>
+                            <button id="reset-filters" class="text-sm text-primary-accent font-semibold hover:text-red-500 transition-colors" data-i18n-key="filter_reset">RESET ALL</button>
+                        </div>
+                        <div id="filters" class="space-y-4">
+                            <div>
+                                <h5 class="font-semibold mb-2 text-sm dark:text-white" data-i18n-key="filter_departure">Departure Time</h5>
+                                <div class="grid grid-cols-2 gap-2 text-xs"><button class="filter-btn p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" data-filter="departure" value="morning" data-i18n-key="filter_before_12">Before 12 PM</button><button class="filter-btn p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" data-filter="departure" value="afternoon" data-i18n-key="filter_12_6">12-6 PM</button><button class="filter-btn p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" data-filter="departure" value="night" data-i18n-key="filter_after_6">After 6 PM</button></div>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold mb-2 text-sm dark:text-white" data-i18n-key="filter_bus_type">Bus Type</h5>
+                                <div class="grid grid-cols-2 gap-2 text-xs"><button class="filter-btn p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" data-filter="busType" value="ac" data-i18n-key="filter_ac">AC</button><button class="filter-btn p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" data-filter="busType" value="non-ac" data-i18n-key="filter_non_ac">Non-AC</button></div>
+                            </div>
+                             <div>
+                                <h5 class="font-semibold mb-2 text-sm dark:text-white" data-i18n-key="filter_seat_type">Seat Type</h5>
+                                <div class="grid grid-cols-2 gap-2 text-xs"><button class="filter-btn p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" data-filter="seatType" value="seater" data-i18n-key="filter_seater">Seater</button><button class="filter-btn p-2 rounded-md border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" data-filter="seatType" value="sleeper" data-i18n-key="filter_sleeper">Sleeper</button></div>
+                            </div>
+                             <div>
+                                <h5 class="font-semibold mb-2 text-sm dark:text-white" data-i18n-key="filter_operator">Bus Operator</h5>
+                                <div id="bus-operator-filters" class="space-y-1 text-sm max-h-40 overflow-y-auto pr-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+                
+                <div class="w-full lg:w-3/4">
+                    <div id="bus-list" class="grid grid-cols-1 gap-4"></div>
+                    <p id="no-results-message" class="text-center text-gray-500 py-10 hidden" data-i18n-key="results_none">No buses found. Please try changing your filters or search.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="seat-booking-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden animate-fade-in">
+        <div class="bg-surface-card w-full h-full max-w-6xl rounded-lg shadow-2xl animate-slide-in-up flex flex-col dark:bg-slate-900">
+            <div class="flex justify-between items-center p-4 border-b bg-white rounded-t-lg dark:bg-slate-800 dark:border-slate-700">
+                <h2 class="text-2xl font-bold text-primary-dark dark:text-white" id="modal-bus-name" data-i18n-key="booking_select_seats">Select Your Seats</h2>
+                <button id="close-booking-modal" class="text-gray-500 hover:text-danger text-2xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
+                <div class="w-full md:w-1/2 p-6 overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-xs text-gray-500 flex flex-wrap gap-x-3">
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-sm bg-white border border-gray-400 mr-1 dark:bg-slate-600 dark:border-slate-500"></span><span data-i18n-key="legend_available">Available</span></span>
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-sm bg-blue-200 border border-blue-500 mr-1"></span><span data-i18n-key="legend_selected">Selected</span></span>
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-sm bg-gray-300 mr-1 dark:bg-slate-700"></span><span data-i18n-key="legend_booked">Booked</span></span>
+                            <span class="flex items-center"><span class="w-3 h-3 rounded-sm bg-pink-200 border border-pink-500 mr-1"></span><span data-i18n-key="legend_ladies">Ladies</span></span>
+                        </div>
+                         <label for="ladies-seat-toggle" class="flex items-center cursor-pointer">
+                            <span class="mr-2 text-sm font-medium text-gray-900 dark:text-gray-300" data-i18n-key="booking_ladies_seats">Ladies seats</span>
+                            <div class="relative">
+                                <input type="checkbox" id="ladies-seat-toggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-pink-500"></div>
+                            </div>
+                        </label>
+                    </div>
+                    <div id="modal-seat-layout" class="bg-white p-4 rounded-lg shadow-inner-lg dark:bg-slate-800"></div>
+                    <div class="flex justify-end mt-2"><i class="fas fa-steering-wheel text-3xl text-gray-400 dark:text-slate-500" title="Driver"></i></div>
+                </div>
+                <div class="w-full md:w-1/2 bg-white p-6 flex flex-col overflow-y-auto dark:bg-slate-800">
+                    <div id="modal-bus-info"></div>
+                    
+                    <div id="boarding-dropping-section" class="py-4 border-b text-sm dark:border-slate-700"></div>
+
+                    <div id="passenger-details-section" class="py-4 text-sm hidden"></div>
+                    
+                    <div id="tabs-container" class="flex-grow">
+                        <div class="border-b border-gray-200 mt-4 dark:border-slate-700">
+                            <nav class="-mb-px flex space-x-6" id="info-tabs">
+                                <button data-tab="reviews" class="tab-button py-3 px-1 border-b-2 border-transparent active" data-i18n-key="booking_reviews">Reviews</button>
+                            </nav>
+                        </div>
+                        <div id="tab-content" class="py-4 text-sm"></div>
+                    </div>
+
+                    <div class="mt-auto pt-4 border-t dark:border-slate-700">
+                        <h5 class="font-bold mb-2 dark:text-white" data-i18n-key="booking_summary">Booking Summary</h5>
+                        <div id="modal-summary" class="space-y-2 text-sm"></div>
+                        <button id="modal-proceed-button" class="w-full p-3 mt-4 bg-primary-accent text-white rounded-lg font-bold text-lg hover:bg-primary-light disabled:bg-gray-400 transition-all duration-300 transform hover:disabled:scale-100 hover:scale-105" disabled data-i18n-key="booking_proceed">Proceed to Payment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60] hidden animate-fade-in"><div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col dark:bg-slate-800"><div class="flex justify-between items-center p-4 border-b dark:border-slate-700"><h2 class="text-2xl font-bold text-primary-dark dark:text-white" data-i18n-key="payment_title">Complete Your Payment</h2><button id="close-payment-modal" class="text-gray-500 hover:text-danger text-2xl"><i class="fas fa-times"></i></button></div><div class="flex flex-col md:flex-row"><div class="w-full md:w-2/3 p-6 border-r dark:border-slate-700"><h3 class="font-bold text-lg mb-4 dark:text-white" data-i18n-key="payment_contact_info">Contact Information</h3><form id="passenger-form" class="space-y-3"><input type="email" id="passenger-email" placeholder="Email Address (for E-Ticket)" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-white" required data-i18n-placeholder-key="payment_email_placeholder"><input type="tel" id="passenger-phone" placeholder="Mobile Number (for SMS confirmation)" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-white" required data-i18n-placeholder-key="payment_phone_placeholder"></form><h3 class="font-bold text-lg mt-6 mb-2 dark:text-white" data-i18n-key="payment_select_method">Select Payment Method</h3><div class="space-y-2"><div class="payment-method border rounded-lg p-3 cursor-pointer flex items-center dark:border-slate-600" data-method="card"><i class="far fa-credit-card mr-3 text-xl w-6 text-primary-accent"></i><strong data-i18n-key="payment_card">Credit/Debit Card</strong></div><div class="payment-method border rounded-lg p-3 cursor-pointer flex items-center dark:border-slate-600" data-method="upi"><i class="fas fa-mobile-alt mr-3 text-xl w-6 text-primary-accent"></i><strong data-i18n-key="payment_upi">UPI</strong></div><div class="payment-method border rounded-lg p-3 cursor-pointer flex items-center dark:border-slate-600" data-method="netbanking"><i class="fas fa-university mr-3 text-xl w-6 text-primary-accent"></i><strong data-i18n-key="payment_netbanking">Net Banking</strong></div><div class="payment-method border rounded-lg p-3 cursor-pointer flex items-center dark:border-slate-600" data-method="wallet"><i class="fas fa-wallet mr-3 text-xl w-6 text-primary-accent"></i><div><strong data-i18n-key="payment_wallet">BusBuddy Wallet</strong><span class="text-xs text-green-600 font-semibold block" data-i18n-key="payment_wallet_cashback">2% Cashback on all bookings!</span></div><span id="wallet-balance-display" class="ml-auto font-bold text-primary-dark dark:text-white"></span></div></div></div><div class="w-full md:w-1/3 p-6 bg-surface-card rounded-b-xl md:rounded-r-xl md:rounded-b-none dark:bg-slate-900"><h3 class="font-bold text-lg mb-4 dark:text-white" data-i18n-key="payment_fare_details">Fare Details</h3><div id="payment-summary" class="space-y-2 text-sm"></div><div class="mt-6"><button id="pay-now-button" class="w-full p-4 bg-success text-white rounded-lg font-bold text-lg hover:bg-emerald-600 transition-colors flex items-center justify-center animate-pulse-slow" data-i18n-key="payment_pay_now">Pay Now</button></div></div></div></div></div>
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[70] hidden animate-fade-in"><div class="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full text-center dark:bg-slate-800"><i class="fas fa-check-circle text-success text-5xl mb-3"></i><h2 class="text-3xl font-bold text-primary-dark dark:text-white" data-i18n-key="confirm_title">Booking Confirmed!</h2><p id="confirmation-message" class="text-gray-500 mt-2 dark:text-slate-400"></p><div id="confirmation-details" class="text-left space-y-2 text-sm my-6 border-t border-b py-4 dark:border-slate-700"></div><div id="ecosystem-integrations" class="hidden my-6"><h3 class="text-lg font-bold mb-3" data-i18n-key="confirm_book_stay">Complete Your Trip: Book a Stay!</h3><div id="hotel-recommendations" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left"></div></div><div class="space-y-2"><button id="eticket-link" class="block w-full p-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"><i class="fas fa-ticket-alt mr-2"></i><span>Download E-Ticket</span></button><button id="book-return-button" class="block w-full p-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-colors"><i class="fas fa-exchange-alt mr-2"></i><span>Book Return Ticket</span></button><button id="track-bus-button" class="block w-full p-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors"><i class="fas fa-bus-alt mr-2"></i><span data-i18n-key="confirm_track_bus">Track Your Bus</span></button><button id="close-confirmation-modal" class="w-full p-3 mt-2 bg-primary-dark text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors dark:bg-slate-600 dark:hover:bg-slate-500" data-i18n-key="confirm_close">Close</button></div></div></div>
+    <div id="alert-box" class="fixed bottom-5 right-5 w-auto max-w-sm p-4 rounded-lg shadow-lg text-white text-center z-[80] hidden"></div>
+
+    <div id="tracking-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[70] hidden animate-fade-in">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-4xl w-full dark:bg-slate-800 flex flex-col md:flex-row gap-6">
+            <div class="w-full md:w-2/3">
+                 <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-2xl font-bold text-primary-dark dark:text-white" data-i18n-key="track_title">Live Bus Tracking</h2>
+                    <button id="close-tracking-modal" class="text-gray-500 hover:text-danger text-2xl"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="tracking-info" class="text-center mb-4">
+                    <p class="font-bold text-lg"><span id="tracking-from"></span> <i class="fas fa-arrow-right mx-2"></i> <span id="tracking-to"></span></p>
+                    <p class="text-sm text-gray-500" id="tracking-bus-name"></p>
+                </div>
+                <div id="tracking-line-container" class="relative py-4">
+                    <div id="tracking-line">
+                        <div id="tracking-bus-icon" class="dark:text-white"><i class="fas fa-bus"></i></div>
+                    </div>
+                    <div id="checkpoint-labels" class="flex justify-between text-xs mt-2 px-1"></div>
+                </div>
+                <div class="mt-4 text-center bg-surface-card p-4 rounded-lg dark:bg-slate-900">
+                    <p class="text-lg font-semibold" id="tracking-status" data-i18n-key="track_connecting">Connecting to GPS...</p>
+                    <p class="text-sm text-gray-600 dark:text-slate-400" id="tracking-eta" data-i18n-key="track_calculating_eta">Calculating Estimated Time of Arrival...</p>
+                </div>
+                 <div class="flex justify-between items-center mt-4">
+                    <button id="view-trip-summary-button" class="hidden p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"><i class="fas fa-history mr-2"></i><span data-i18n-key="track_view_summary">View Summary</span></button>
+                     <button id="sos-button" class="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-bold animate-pulse"><i class="fas fa-exclamation-triangle mr-2"></i>SOS</button>
+                    <button id="share-trip-button" class="ml-auto p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"><i class="fas fa-share-alt mr-2"></i><span data-i18n-key="track_share_trip">Share Trip</span></button>
+                </div>
+            </div>
+            <div class="w-full md:w-1/3 bg-surface-card dark:bg-slate-900 p-4 rounded-lg flex flex-col">
+                <h3 class="font-bold text-lg mb-3 border-b pb-2 dark:border-slate-700" data-i18n-key="track_live_updates">Live Updates</h3>
+                <div id="tracking-alerts-container" class="space-y-3 max-h-48 overflow-y-auto text-sm flex-grow"></div>
+                <div id="food-order-section" class="mt-4 pt-4 border-t dark:border-slate-700 hidden">
+                    <h3 class="font-bold text-lg mb-2" data-i18n-key="food_title">Pre-order Your Meal</h3>
+                    <p class="text-xs mb-3 text-gray-500" id="food-stop-info"></p>
+                    <div id="food-menu" class="space-y-2 text-sm"></div>
+                    <button id="place-food-order-btn" class="w-full mt-3 p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors" data-i18n-key="food_place_order">Place Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="feedback-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[70] hidden animate-fade-in">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full dark:bg-slate-800">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-primary-dark dark:text-white">Rate Your Journey</h2>
+                <button id="close-feedback-modal" class="text-gray-500 hover:text-danger text-2xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="text-center">
+                <p class="mb-4 text-gray-600 dark:text-slate-300">How was your experience with <span id="feedback-bus-name" class="font-semibold"></span>?</p>
+                <div id="star-rating" class="text-4xl text-gray-300 cursor-pointer mb-4">
+                    <i class="fas fa-star" data-value="1"></i>
+                    <i class="fas fa-star" data-value="2"></i>
+                    <i class="fas fa-star" data-value="3"></i>
+                    <i class="fas fa-star" data-value="4"></i>
+                    <i class="fas fa-star" data-value="5"></i>
+                </div>
+                <textarea id="feedback-comment" class="w-full p-2 border rounded-md dark:bg-slate-700 dark:border-slate-600 dark:text-white" rows="3" placeholder="Tell us more (optional)..."></textarea>
+                <button id="submit-feedback-button" class="w-full mt-4 p-3 bg-primary-accent text-white rounded-lg font-semibold hover:bg-primary-light transition-colors">Submit Feedback</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="trip-summary-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[80] hidden animate-fade-in">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full dark:bg-slate-800">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-primary-dark dark:text-white">Trip Summary</h2>
+                <button id="close-summary-modal" class="text-gray-500 hover:text-danger text-2xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="trip-summary-content"></div>
+        </div>
+    </div>
+    
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[90] hidden animate-fade-in">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full dark:bg-slate-800 relative">
+            <button id="close-auth-modal" class="absolute top-4 right-4 text-gray-500 hover:text-danger text-2xl"><i class="fas fa-times"></i></button>
+            <div id="login-view">
+                <h2 class="text-2xl font-bold text-primary-dark dark:text-white mb-6 text-center" data-i18n-key="auth_login_title">Login to BusBuddy</h2>
+                <form id="login-form" class="space-y-4">
+                    <input type="email" placeholder="Email" class="w-full p-3 border rounded-md focus:ring-2 focus:ring-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-white" required value="test@busbuddy.com" data-i18n-placeholder-key="auth_email_placeholder">
+                    <input type="password" placeholder="Password" class="w-full p-3 border rounded-md focus:ring-2 focus:ring-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-white" required value="password123" data-i18n-placeholder-key="auth_password_placeholder">
+                    <button type="submit" class="w-full p-3 bg-primary-accent text-white rounded-lg font-semibold hover:bg-primary-light transition-colors" data-i18n-key="auth_login_btn">Login</button>
+                </form>
+                <p class="text-center text-sm mt-4"><span data-i18n-key="auth_no_account">Don't have an account?</span> <a href="#" id="show-signup" class="text-primary-accent font-semibold hover:underline" data-i18n-key="auth_signup_link">Sign up</a></p>
+            </div>
+            <div id="signup-view" class="hidden">
+                 <h2 class="text-2xl font-bold text-primary-dark dark:text-white mb-6 text-center" data-i18n-key="auth_signup_title">Create Account</h2>
+                <form id="signup-form" class="space-y-4">
+                    <input type="text" placeholder="Full Name" class="w-full p-3 border rounded-md focus:ring-2 focus:ring-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-white" required data-i18n-placeholder-key="auth_name_placeholder">
+                    <input type="email" placeholder="Email" class="w-full p-3 border rounded-md focus:ring-2 focus:ring-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-white" required data-i18n-placeholder-key="auth_email_placeholder">
+                    <input type="password" placeholder="Password" class="w-full p-3 border rounded-md focus:ring-2 focus:ring-primary-accent dark:bg-slate-700 dark:border-slate-600 dark:text-white" required data-i18n-placeholder-key="auth_password_placeholder">
+                    <button type="submit" class="w-full p-3 bg-primary-accent text-white rounded-lg font-semibold hover:bg-primary-light transition-colors" data-i18n-key="auth_signup_btn">Sign Up</button>
+                </form>
+                 <p class="text-center text-sm mt-4"><span data-i18n-key="auth_have_account">Already have an account?</span> <a href="#" id="show-login" class="text-primary-accent font-semibold hover:underline" data-i18n-key="auth_login_link">Login</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="my-bookings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[80] hidden animate-fade-in p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-3xl w-full dark:bg-slate-800 flex flex-col h-[90vh]">
+             <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 class="text-2xl font-bold text-primary-dark dark:text-white" data-i18n-key="bookings_title">My Bookings</h2>
+                <button id="close-bookings-modal" class="text-gray-500 hover:text-danger text-2xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="bookings-list" class="overflow-y-auto">
+                </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let busData = {};
+        let trackingInterval;
+        let walletBalance = 500.00; // Simulated wallet balance
+        let tripHistory = [];
+        let currentUser = null; // {name: 'Test User', email: 'test@busbuddy.com'}
+        let userBookings = [];
+
+        // REPLACE WITH YOUR ACTUAL OpenWeatherMap API KEY
+        const WEATHER_API_KEY = 'YOUR_API_KEY_HERE'; 
+
+        const VOUCHERS = {
+            "BUDDY100": { type: 'fixed', value: 100 },
+            "FIRSTBUS": { type: 'fixed', value: 150 },
+            "SAVE10": { type: 'percent', value: 10 }
+        };
+
+        const locationData = {
+            'Default': {
+                boardingPoints: ['Main Bus Stand', 'City Center', 'Old Bridge', 'Railway Station Circle'],
+                droppingPoints: ['Central Bus Depot', 'Downtown Square', 'Airport Dropoff', 'University Campus'],
+                checkpoints: ['Highway Start', 'Midway Plaza', 'City Outskirts'],
+                lat: 28.6139, lon: 77.2090 // Delhi
+            },
+            'Chennai': {
+                boardingPoints: ["Koyambedu", "Guindy", "Tambaram", "Ashok Pillar", "Vadapalani", "Perungalathur"],
+                droppingPoints: ["Madiwala", "Electronic City", "Silk Board", "Majestic"],
+                checkpoints: ["Sriperumbudur", "Vellore", "Krishnagiri"],
+                lat: 13.0827, lon: 80.2707
+            },
+            'Bangalore': {
+                boardingPoints: ["Madiwala", "Electronic City", "Silk Board", "Majestic", "Marathahalli", "Indiranagar"],
+                droppingPoints: ["Koyambedu", "Guindy", "Tambaram", "Vadapalani"],
+                checkpoints: ["Hosur", "Krishnagiri", "Vellore"],
+                lat: 12.9716, lon: 77.5946
+            },
+            'Hyderabad': {
+                boardingPoints: ["Miyapur", "Kukatpally", "Ameerpet", "Lakdikapul", "Secunderabad", "Gachibowli"],
+                droppingPoints: ["Miyapur", "Kukatpally", "Ameerpet", "Lakdikapul", "Secunderabad", "Gachibowli"],
+                checkpoints: ["Shamshabad", "Kurnool", "Anantapur"],
+                 lat: 17.3850, lon: 78.4867
+            },
+            'Mumbai': {
+                boardingPoints: ["Borivali", "Dadar", "Thane", "Panvel", "Andheri", "Sion"],
+                droppingPoints: ["Swargate", "Wakad", "Hinjewadi", "Katraj"],
+                checkpoints: ["Vashi", "Lonavala", "Talegaon"],
+                lat: 19.0760, lon: 72.8777
+            },
+            'Pune': {
+                boardingPoints: ["Swargate", "Wakad", "Hinjewadi", "Katraj", "Pune Station", "Hadapsar"],
+                droppingPoints: ["Borivali", "Dadar", "Thane", "Panvel"],
+                checkpoints: ["Talegaon", "Lonavala", "Vashi"],
+                lat: 18.5204, lon: 73.8567
+            },
+            'Delhi': {
+                boardingPoints: ["ISBT Kashmiri Gate", "Anand Vihar", "Dhaula Kuan", "Karol Bagh", "Majnu ka Tilla"],
+                droppingPoints: ["Sindhi Camp", "Gopalbari", "200 Feet Bypass"],
+                checkpoints: ["Gurugram", "Behror", "Shahpura"],
+                lat: 28.7041, lon: 77.1025
+            },
+            'Goa': {
+                boardingPoints: ["Panjim", "Mapusa", "Madgaon", "Vasco Da Gama"],
+                droppingPoints: ["Panjim", "Mapusa", "Madgaon", "Vasco Da Gama"],
+                checkpoints: ["Karwar", "Ankola", "Honnavar"],
+                lat: 15.2993, lon: 74.1240
+            },
+            'Kolkata': {
+                boardingPoints: ["Esplanade", "Ultadanga", "Santragachi", "Behala", "Garia"],
+                droppingPoints: ["Esplanade", "Ultadanga", "Santragachi", "Behala", "Garia"],
+                checkpoints: ["Kharagpur", "Baleswar", "Cuttack"],
+                lat: 22.5726, lon: 88.3639
+            },
+            'Jaipur': {
+                boardingPoints: ["Sindhi Camp", "Gopalbari", "200 Feet Bypass", "Narayan Singh Circle"],
+                droppingPoints: ["ISBT Kashmiri Gate", "Anand Vihar", "Dhaula Kuan"],
+                checkpoints: ["Shahpura", "Behror", "Gurugram"],
+                lat: 26.9124, lon: 75.7873
+            },
+        };
+
+        const generateMockData = (fromCity = 'Chennai', toCity = 'Bangalore') => {
+            const operators = ["Sharma Transports", "VRL Travels", "SRS Travels", "Orange Tours", "Kallada Travels", "Parveen Travels", "Neeta Tours", "Seabird Tourists", "KPN Travels", "Rathimeena Travels", "National Travels", "Kesineni Travels", "Hebron Transports", "YBM Travels", "IntrCity SmartBus", "Galaxy Tours", "GreenLine"];
+            const premiumOperators = ["IntrCity SmartBus", "Sharma Transports", "VRL Travels", "Orange Tours"];
+            const seatTypes = ['seater', 'sleeper', 'seater_sleeper'];
+            const busTypes = ['ac', 'non-ac'];
+            
+            const fromLocations = locationData[fromCity] || locationData['Default'];
+            const toLocations = locationData[toCity] || locationData['Default'];
+            
+            const searchDate = new Date(travelDateInput.value);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const isToday = searchDate.getTime() === today.getTime();
+
+            const allAmenities = [
+                { name: 'Wi-Fi', icon: 'fa-wifi' }, { name: 'Charging Point', icon: 'fa-bolt' }, { name: 'Live Tracking', icon: 'fa-map-marker-alt' },
+                { name: 'Blanket', icon: 'fa-person-booth' }, { name: 'Water Bottle', icon: 'fa-tint' }
+            ];
+            const reviews = [ { name: "Priya S.", rating: 5, comment: "Excellent service! Clean bus and on-time departure." }, { name: "Rajesh K.", rating: 4, comment: "Comfortable journey. Would travel again." }, { name: "Anil B.", rating: 4, comment: "Good for budget travel. Reached on time." }, { name: "Sunita M.", rating: 5, comment: "Staff was very helpful. Smooth journey." }, ];
+            let generatedData = {};
+
+            for (let i = 1; i <= 100; i++) {
+                const operator = operators[Math.floor(Math.random() * operators.length)];
+                const seatType = seatTypes[Math.floor(Math.random() * seatTypes.length)];
+                const busType = busTypes[Math.floor(Math.random() * busTypes.length)];
+                const departureTime = Math.floor(Math.random() * 24);
+                
+                let baseFare = 600 + Math.floor(Math.random() * 300);
+                if (seatType.includes('sleeper')) baseFare += 400;
+                if (busType === 'ac') baseFare += 300;
+                else baseFare -= 100;
+                if (premiumOperators.includes(operator)) baseFare += 150;
+                
+                // Dynamic Pricing
+                const seatsAvailable = Math.floor(Math.random() * 20) + 5;
+                if (seatsAvailable < 10) baseFare *= 1.15; // 15% surge for last few seats
+                if(isToday) baseFare *= 1.1; // 10% surge for same-day booking
+                
+                baseFare = Math.round(baseFare / 5) * 5;
+
+                const hex = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                
+                const numAmenities = Math.floor(Math.random() * 3) + 2;
+                const busAmenities = [...allAmenities].sort(() => 0.5 - Math.random()).slice(0, numAmenities);
+
+                generatedData[i] = {
+                    id: i, name: `${operator.split(' ')[0]} Express #${i}`, operator, departureTime, busType, seatType,
+                    rating: (Math.random() * 1.5 + 3.5).toFixed(1),
+                    reviewsCount: Math.floor(Math.random() * 800) + 50, baseFare,
+                    seatsAvailable: seatsAvailable,
+                    amenities: busAmenities,
+                    // Replace the URL below with a local relative path (e.g. `assets/images/bus-${Math.floor(Math.random() * 5) + 1}.jpg`) to use your own images
+                    images: [`https://placehold.co/200x120/${hex}/white?text=${operator.split(' ')[0]}`],
+                    boardingPoints: [...fromLocations.boardingPoints].sort(() => 0.5 - Math.random()).slice(0, 4).map(p => `${p} (${String(departureTime).padStart(2, '0')}:${String(Math.floor(Math.random()*59)).padStart(2,'0')})`),
+                    droppingPoints: [...toLocations.droppingPoints].sort(() => 0.5 - Math.random()).slice(0, 4),
+                    reviews: [reviews[Math.floor(Math.random() * reviews.length)], reviews[Math.floor(Math.random() * reviews.length)]]
+                };
+            }
+            busData = generatedData;
+        };
+
+        const seatMap = {
+            sleeper: [ {id: 'L2', status: 'booked', gender: 'Male'}, {id: 'L5', status: 'booked', gender: 'Male'}, {id: 'L8', status: 'women'}, {id: 'U1', status: 'booked', gender: 'Male'}, {id: 'U6', status: 'women'}, {id: 'U8', status: 'booked', gender: 'Female'} ],
+            seater: [ {id: 'A4', status: 'booked', gender: 'Male'}, {id: 'B3', status: 'booked', gender: 'Male'}, {id: 'C2', status: 'women'}, {id: 'F1', status: 'booked', gender: 'Male'}, {id: 'H2', status: 'booked', gender: 'Male'}, {id: 'G4', status: 'women'} ],
+            seater_sleeper: [ {id: 'B4', status: 'booked', gender: 'Male'}, {id: 'C1', status: 'women'}, {id: 'U2', status: 'booked', gender: 'Male'}, {id: 'U5', status: 'booked', gender: 'Female'} ]
+        };
+        const searchForm = document.getElementById('search-form'), resultsArea = document.getElementById('results-area'), busList = document.getElementById('bus-list'), travelDateInput = document.getElementById('travel-date'), seatBookingModal = document.getElementById('seat-booking-modal'), paymentModal = document.getElementById('payment-modal'), confirmationModal = document.getElementById('confirmation-modal'), alertBox = document.getElementById('alert-box'), filtersContainer = document.getElementById('filters'), trackingModal = document.getElementById('tracking-modal'), feedbackModal = document.getElementById('feedback-modal'), tripSummaryModal = document.getElementById('trip-summary-modal'), authModal = document.getElementById('auth-modal'), myBookingsModal = document.getElementById('my-bookings-modal');
+        const SERVICE_CHARGE = 150;
+        let activeBooking = {};
+        
+        const allCities = Object.keys(locationData).filter(c => c !== 'Default');
+        const citiesDatalist = document.getElementById('cities');
+        citiesDatalist.innerHTML = allCities.map(city => `<option value="${city}"></option>`).join('');
+
+        const setupInitialDate = () => {
+            const today = new Date();
+            travelDateInput.min = today.toISOString().split('T')[0];
+            travelDateInput.value = today.toISOString().split('T')[0];
+        };
+        
+        const generateAndSetCareNumbers = () => {
+            const firstDigit = ['9', '8', '7', '6'][Math.floor(Math.random() * 4)];
+            let number = firstDigit;
+            for(let i=0; i<9; i++) {
+                number += Math.floor(Math.random() * 10);
+            }
+            document.getElementById('care-number-1').textContent = `${number.slice(0,5)} ${number.slice(5)}`;
+        };
+
+        const updateWalletDisplay = () => {
+            const walletDisplay = document.getElementById('wallet-balance-display');
+            if(walletDisplay) {
+                walletDisplay.textContent = `₹${walletBalance.toFixed(2)}`;
+            }
+        };
+
+        const renderBusList = () => {
+            busList.innerHTML = '';
+            const operators = new Set();
+            Object.entries(busData).forEach(([id, bus]) => {
+                operators.add(bus.operator);
+                const departureCategory = bus.departureTime < 12 ? 'morning' : bus.departureTime < 18 ? 'afternoon' : 'night';
+                
+                const amenitiesHtml = bus.amenities.map(a => `<span class="text-gray-500" title="${a.name}"><i class="fas ${a.icon}"></i></span>`).join('');
+                const seatsColor = bus.seatsAvailable < 10 ? 'text-danger' : bus.seatsAvailable < 20 ? 'text-warning' : 'text-green-600';
+
+                busList.innerHTML += `
+                    <div class="bus-card bg-white rounded-xl shadow-lg transition duration-300 hover:shadow-2xl flex flex-col md:flex-row p-4 dark:bg-slate-800 dark:shadow-none dark:border dark:border-slate-700" data-bus-id="${id}" data-seat-type="${bus.seatType}" data-base-fare="${bus.baseFare}" data-bus-type="${bus.busType}" data-operator="${bus.operator}" data-departure="${departureCategory}">
+                        <img src="${bus.images[0]}" alt="Bus Image" class="rounded-lg w-full md:w-36 h-36 md:h-auto object-cover mb-3 md:mb-0">
+                        <div class="flex-grow pl-0 md:pl-4 flex flex-col">
+                            <div class="flex justify-between items-start">
+                                <div><p class="text-xl font-bold text-primary-dark dark:text-white">${bus.name}</p><p class="text-sm text-gray-500">${bus.operator} | ${bus.busType.toUpperCase()} ${bus.seatType.replace('_','/').replace(/^\w/, c => c.toUpperCase())}</p></div>
+                                <div class="flex items-center space-x-1 text-green-600 font-bold bg-green-100 px-2 py-1 rounded-md text-sm"><i class="fas fa-star text-xs"></i><span>${bus.rating}</span><span class="text-xs text-gray-500 font-normal ml-1">(${bus.reviewsCount})</span></div>
+                            </div>
+                            <div class="flex items-center space-x-3 my-2 text-xs">${amenitiesHtml}</div>
+                            <div class="flex justify-between items-end mt-2 flex-grow">
+                                <div class="text-sm text-gray-600 dark:text-slate-400"><span class="font-bold text-base dark:text-white">${String(bus.departureTime).padStart(2, '0')}:00</span> - ${String((bus.departureTime + 8) % 24).padStart(2, '0')}:30 <span class="text-gray-400">|</span> 8h 30m</div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-extrabold text-primary-dark dark:text-white">₹${bus.baseFare.toLocaleString()}</p>
+                                    <p class="text-xs ${seatsColor} font-semibold">${bus.seatsAvailable} Seats Available</p>
+                                </div>
+                                <button class="select-seats-btn bg-primary-accent text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary-light transition-transform transform hover:scale-105">Select Seats</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            const operatorFiltersDiv = document.getElementById('bus-operator-filters');
+            operatorFiltersDiv.innerHTML = [...operators].sort().map(op => `<label class="flex items-center cursor-pointer hover:bg-gray-100 p-1 rounded dark:hover:bg-slate-700"><input type="checkbox" data-filter="operator" value="${op}" class="mr-2 h-4 w-4 rounded border-gray-300 text-primary-accent focus:ring-primary-accent dark:bg-slate-600 dark:border-slate-500"> ${op}</label>`).join('');
+        };
+
+        const fetchAndDisplayWeather = async (city) => {
+            const widget = document.getElementById('weather-widget');
+            if (WEATHER_API_KEY === 'YOUR_API_KEY_HERE') {
+                widget.innerHTML = `<p class="text-xs text-gray-400">Weather API key not set.</p>`;
+                return;
+            }
+            const cityData = locationData[city] || locationData['Default'];
+            if (!cityData.lat) {
+                widget.innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${cityData.lat}&lon=${cityData.lon}&appid=${WEATHER_API_KEY}&units=metric`);
+                if (!response.ok) throw new Error('Weather data not found');
+                const data = await response.json();
+                
+                widget.innerHTML = `
+                    <div class="flex items-center justify-end space-x-2">
+                        <div>
+                            <p class="font-bold text-sm">${data.name}</p>
+                            <p class="text-xs text-gray-500">${data.weather[0].main}</p>
+                        </div>
+                        <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Weather icon" class="h-8 w-8">
+                        <p class="text-lg font-bold">${Math.round(data.main.temp)}°C</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Weather fetch error:", error);
+                widget.innerHTML = `<p class="text-xs text-gray-500">Weather unavailable</p>`;
+            }
+        };
+        
+        const applyFilters = () => {
+            const filters = { departure: [], busType: [], seatType: [], operator: [] };
+             filtersContainer.querySelectorAll('input:checked, button.active').forEach(el => {
+                const filter = el.dataset.filter;
+                if (!filters[filter]) filters[filter] = [];
+                filters[filter].push(el.value);
+            });
+            
+            let visibleCount = 0;
+            busList.querySelectorAll('.bus-card').forEach(card => {
+                const data = card.dataset;
+                const departureMatch = filters.departure.length === 0 || filters.departure.includes(data.departure);
+                const busTypeMatch = filters.busType.length === 0 || filters.busType.includes(data.busType);
+                const seatTypeMatch = filters.seatType.length === 0 || filters.seatType.some(st => data.seatType.includes(st));
+                const operatorMatch = filters.operator.length === 0 || filters.operator.includes(data.operator);
+                
+                if (departureMatch && busTypeMatch && seatTypeMatch && operatorMatch) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            document.getElementById('no-results-message').style.display = visibleCount === 0 ? 'block' : 'none';
+        };
+
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const fromCity = document.getElementById('from-city').value;
+            const toCity = document.getElementById('to-city').value;
+            generateMockData(fromCity, toCity);
+            document.getElementById('results-date-display').textContent = `on ${new Date(travelDateInput.value).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
+            document.getElementById('route-display').textContent = `${fromCity} to ${toCity}`;
+            resultsArea.classList.remove('hidden');
+            renderBusList();
+            fetchAndDisplayWeather(toCity);
+            applyFilters();
+        });
+        
+        let currentSeatStatusMap = [];
+        function generateSeatLayoutInModal(type) {
+            const layoutContainer = seatBookingModal.querySelector('#modal-seat-layout');
+            currentSeatStatusMap = JSON.parse(JSON.stringify(seatMap[type] || [])); // Deep copy
+            let layoutHtml = '';
+            if (type === 'seater_sleeper') {
+                layoutHtml += '<h3 class="font-bold text-center text-sm mb-2 text-primary-dark">Lower Deck (Seater)</h3>' + createSeaterLayout(5, 'L');
+                layoutHtml += '<hr class="my-4"><h3 class="font-bold text-center text-sm mb-2 text-primary-dark">Upper Deck (Sleeper)</h3>' + createDeckLayout('U', 5);
+            } else if (type === 'sleeper') {
+                layoutHtml += '<h3 class="font-bold text-center text-sm mb-2 text-primary-dark">Lower Deck</h3>' + createDeckLayout('L', 5) + '<hr class="my-4"><h3 class="font-bold text-center text-sm mb-2 text-primary-dark">Upper Deck</h3>' + createDeckLayout('U', 5);
+            } else { layoutHtml = createSeaterLayout(10, ''); }
+            layoutContainer.innerHTML = layoutHtml;
+            attachModalSeatListeners();
+        }
+        
+        const createDeckLayout = function(prefix, rows) {
+            let html = '<div class="grid grid-cols-4 gap-x-2 gap-y-3 justify-center">';
+            for (let i = 1; i <= rows; i++) {
+                html += createSeat(`${prefix}S${i}`, 'sleeper');
+                html += '<div></div>';
+                html += createSeat(`${prefix}D${i}A`, 'sleeper');
+                html += createSeat(`${prefix}D${i}B`, 'sleeper');
+            } return html + '</div>';
+        }
+
+        const createSeaterLayout = function(rows, prefix = '') {
+            let layout = '<div class="grid grid-cols-5 gap-2 justify-center">';
+            const rowChars = ['A','B','C','D','E','F','G','H','I','J'];
+            for (let i = 0; i < rows; i++) {
+                layout += createSeat(`${prefix}${rowChars[i]}1`, 'seater');
+                layout += createSeat(`${prefix}${rowChars[i]}2`, 'seater');
+                layout += '<div class="w-full h-full"></div>'; // Aisle
+                layout += createSeat(`${prefix}${rowChars[i]}3`, 'seater');
+                layout += createSeat(`${prefix}${rowChars[i]}4`, 'seater');
+            } return layout + '</div>';
+        }
+        
+        const createSeat = function(id, type) {
+            const seatInfo = currentSeatStatusMap.find(s => s.id === id) || { status: 'available', gender: null };
+            const price = activeBooking.baseFare + (type === 'sleeper' ? 200 : 0);
+            const isSleeper = type === 'sleeper';
+            const typeClass = isSleeper ? 'seat-sleeper' : '';
+            const icon = isSleeper ? 'fa-bed' : 'fa-couch';
+            let statusClass = seatInfo.status === 'women' ? 'women available' : seatInfo.status;
+            return `<div class="seat ${typeClass} ${statusClass}" data-seat-id="${id}" data-price="${price}" data-status="${seatInfo.status}" data-gender="${seatInfo.gender}"><div class="seat-icon"><i class="fas ${icon}"></i></div><div class="seat-price">₹${price}</div></div>`;
+        }
+        
+        busList.addEventListener('click', (e) => {
+            const button = e.target.closest('.select-seats-btn');
+            if (!button) return;
+            if (!currentUser) {
+                showAlert('Please login to book tickets.', 'warning');
+                authModal.classList.remove('hidden');
+                return;
+            }
+            const card = e.target.closest('.bus-card');
+            const busId = card.dataset.busId;
+            const seatType = card.dataset.seatType;
+            const baseFare = parseInt(card.dataset.baseFare, 10);
+            activeBooking = { busId, seatType, baseFare, selectedSeats: [], passengers: {}, appliedVoucher: null };
+            populateBookingModal(busId);
+            seatBookingModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        
+        const populateBookingModal = function(busId) { 
+            const data = busData[busId]; 
+            seatBookingModal.querySelector('#modal-bus-name').textContent = data.name; 
+            seatBookingModal.querySelector('#modal-bus-info').innerHTML = `<p class="text-lg font-bold">${data.name} <span class="text-sm font-normal text-gray-500">${data.operator}</span></p><div class="flex items-center space-x-1 text-green-600 font-bold bg-green-100 px-2 py-1 rounded-md text-sm"><i class="fas fa-star text-sm"></i><span>${data.rating}</span></div>`; 
+            generateSeatLayoutInModal(activeBooking.seatType); 
+            renderBoardingDroppingPoints();
+            renderTabContent('reviews'); 
+            renderPassengerForms();
+            updateModalSummary(); 
+            document.getElementById('ladies-seat-toggle').checked = false;
+        }
+
+        const attachModalSeatListeners = function() { seatBookingModal.querySelectorAll('.seat.available').forEach(seat => { seat.addEventListener('click', () => { const seatId = seat.dataset.seatId; const price = parseInt(seat.dataset.price, 10); const maxTravellers = 10; const index = activeBooking.selectedSeats.findIndex(s => s.id === seatId); if (index > -1) { activeBooking.selectedSeats.splice(index, 1); delete activeBooking.passengers[seatId]; seat.classList.remove('selected'); } else if (activeBooking.selectedSeats.length < maxTravellers) { activeBooking.selectedSeats.push({ id: seatId, price: price }); activeBooking.passengers[seatId] = { name: '', age: '', gender: '' }; seat.classList.add('selected'); } else { showAlert(`You can only select up to ${maxTravellers} seat(s).`); } renderPassengerForms(); updateModalSummary(); }); }); }
+        
+        function renderPassengerForms() {
+            const container = document.getElementById('passenger-details-section');
+            if (activeBooking.selectedSeats.length === 0) {
+                container.innerHTML = '';
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            let formHtml = '<h5 class="font-bold mb-2">Passenger Details</h5><div class="space-y-4 max-h-48 overflow-y-auto pr-2">';
+            activeBooking.selectedSeats.forEach(seat => {
+                const p = activeBooking.passengers[seat.id];
+                formHtml += `
+                    <div class="p-3 bg-gray-100 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                        <p class="font-semibold mb-2 dark:text-white">Seat: ${seat.id}</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input type="text" placeholder="Name" class="p-2 border rounded col-span-3 md:col-span-1 passenger-input dark:bg-slate-600 dark:border-slate-500 dark:text-white" data-seat-id="${seat.id}" data-field="name" value="${p.name || ''}" required>
+                            <input type="number" placeholder="Age" class="p-2 border rounded passenger-input dark:bg-slate-600 dark:border-slate-500 dark:text-white" data-seat-id="${seat.id}" data-field="age" value="${p.age || ''}" required>
+                            <select class="p-2 border rounded passenger-input dark:bg-slate-600 dark:border-slate-500 dark:text-white" data-seat-id="${seat.id}" data-field="gender" required>
+                                <option value="" ${!p.gender ? 'selected' : ''}>Gender</option>
+                                <option value="Male" ${p.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                <option value="Female" ${p.gender === 'Female' ? 'selected' : ''}>Female</option>
+                                <option value="Other" ${p.gender === 'Other' ? 'selected' : ''}>Other</option>
+                            </select>
+                        </div>
+                    </div>`;
+            });
+            formHtml += '</div>';
+            container.innerHTML = formHtml;
+            container.querySelectorAll('.passenger-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const { seatId, field } = e.target.dataset;
+                    activeBooking.passengers[seatId][field] = e.target.value;
+                    updateModalSummary();
+                });
+            });
+        }
+        
+        function arePassengerDetailsValid() {
+            if (activeBooking.selectedSeats.length === 0) return false;
+            for (const seatId in activeBooking.passengers) {
+                const passenger = activeBooking.passengers[seatId];
+                if (!passenger.name.trim() || !passenger.age.trim() || !passenger.gender) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        const updateModalSummary = function() {
+            const summaryDiv = seatBookingModal.querySelector('#modal-summary');
+            const count = activeBooking.selectedSeats.length;
+            const seatFare = activeBooking.selectedSeats.reduce((acc, seat) => acc + seat.price, 0);
+            
+            let discountAmount = 0;
+            let discountHtml = '';
+            if (activeBooking.appliedVoucher && count > 0) {
+                const voucher = VOUCHERS[activeBooking.appliedVoucher];
+                if (voucher.type === 'fixed') {
+                    discountAmount = voucher.value;
+                } else if (voucher.type === 'percent') {
+                    discountAmount = Math.round((seatFare * voucher.value) / 100);
+                }
+                discountHtml = `<div class="flex justify-between text-green-600"><span>Discount (${activeBooking.appliedVoucher}):</span><span>- ₹${discountAmount.toLocaleString()}</span></div>`;
+            }
+            
+            const total = seatFare + (count > 0 ? SERVICE_CHARGE : 0) - discountAmount;
+            activeBooking.totalFare = total;
+            
+            summaryDiv.innerHTML = `
+                <div class="flex justify-between"><span>Seats (${count}):</span><span>${count > 0 ? activeBooking.selectedSeats.map(s => s.id).join(', ') : 'None'}</span></div>
+                <div class="flex justify-between"><span>Seat Fare:</span><span>₹${seatFare.toLocaleString()}</span></div>
+                <div class="flex justify-between"><span>Taxes & Fees:</span><span>₹${count > 0 ? SERVICE_CHARGE : 0}</span></div>
+                ${discountHtml}
+                <div id="voucher-section" class="pt-2">
+                     <div class="flex items-center space-x-2">
+                         <input type="text" id="voucher-code" placeholder="Enter Voucher Code" class="w-full p-2 border rounded-md text-sm" ${activeBooking.appliedVoucher ? 'disabled' : ''} value="${activeBooking.appliedVoucher || ''}">
+                         <button id="apply-voucher-btn" class="px-4 py-2 text-white rounded-md text-sm font-semibold ${activeBooking.appliedVoucher ? 'bg-danger hover:bg-red-600' : 'bg-success hover:bg-emerald-600'}">${activeBooking.appliedVoucher ? 'Remove' : 'Apply'}</button>
+                     </div>
+                </div>
+                <div class="border-t my-2 pt-2 flex justify-between font-bold text-lg"><span>Total Fare:</span><span class="text-primary-accent">₹${total.toLocaleString()}</span></div>`;
+
+            seatBookingModal.querySelector('#modal-proceed-button').disabled = !(count > 0 && activeBooking.boardingPoint && activeBooking.droppingPoint && arePassengerDetailsValid());
+            
+            document.getElementById('apply-voucher-btn').addEventListener('click', handleVoucherApply);
+        }
+
+        function handleVoucherApply() {
+            if (activeBooking.selectedSeats.length === 0) {
+                showAlert('Please select a seat before applying a voucher.', 'warning');
+                return;
+            }
+            if (activeBooking.appliedVoucher) { // Remove voucher
+                activeBooking.appliedVoucher = null;
+                showAlert('Voucher removed.', 'warning');
+                updateModalSummary();
+                return;
+            }
+            const codeInput = document.getElementById('voucher-code');
+            const code = codeInput.value.toUpperCase();
+            if (VOUCHERS[code]) {
+                activeBooking.appliedVoucher = code;
+                showAlert(`Voucher "${code}" applied successfully!`, 'success');
+                updateModalSummary();
+            } else {
+                showAlert('Invalid voucher code.', 'danger');
+            }
+        }
+
+        function renderBoardingDroppingPoints() {
+            const container = document.getElementById('boarding-dropping-section');
+            const data = busData[activeBooking.busId];
+            if (!data) return;
+            const content = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><h6 class="font-bold mb-2">Boarding Point</h6><div class="space-y-2 max-h-24 overflow-y-auto pr-2">${data.boardingPoints.map(p => `<div><label class="flex items-start space-x-2 cursor-pointer"><input type="radio" name="boarding" value="${p}" ${activeBooking.boardingPoint === p ? 'checked' : ''}><span class="text-xs">${p}</span></label></div>`).join('')}</div></div><div><h6 class="font-bold mb-2">Dropping Point</h6><div class="space-y-2 max-h-24 overflow-y-auto pr-2">${data.droppingPoints.map(p => `<div><label class="flex items-start space-x-2 cursor-pointer"><input type="radio" name="dropping" value="${p}" ${activeBooking.droppingPoint === p ? 'checked' : ''}><span class="text-xs">${p}</span></label></div>`).join('')}</div></div></div>`;
+            container.innerHTML = content;
+        }
+
+        seatBookingModal.querySelector('#info-tabs').addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { renderTabContent(e.target.dataset.tab); } });
+        const renderTabContent = function(tabName) { 
+            const tabContentDiv = seatBookingModal.querySelector('#tab-content'); 
+            const data = busData[activeBooking.busId]; 
+            if (!data) return;
+            let content = ''; 
+            seatBookingModal.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); 
+            const activeTab = seatBookingModal.querySelector(`[data-tab="${tabName}"]`);
+            if (activeTab) activeTab.classList.add('active'); 
+            
+            if (tabName === 'reviews') { 
+                content = `<div class="space-y-3 max-h-48 overflow-y-auto pr-2">${data.reviews.map(r => `<div class="bg-surface-card p-3 rounded-lg dark:bg-slate-700"><div class="flex justify-between items-center"><p class="font-semibold dark:text-white">${r.name}</p><div class="flex items-center text-yellow-500">${'<i class="fas fa-star text-xs"></i>'.repeat(r.rating)}</div></div><p class="text-gray-600 mt-1 dark:text-slate-300">"${r.comment}"</p></div>`).join('')}</div>`; 
+            } 
+            tabContentDiv.innerHTML = content; 
+        }
+
+        seatBookingModal.addEventListener('change', e => { if (e.target.name === 'boarding') activeBooking.boardingPoint = e.target.value; if (e.target.name === 'dropping') activeBooking.droppingPoint = e.target.value; updateModalSummary(); });
+        document.getElementById('close-booking-modal').addEventListener('click', () => { seatBookingModal.classList.add('hidden'); document.body.style.overflow = 'auto'; });
+        const showAlert = function(message, type = 'danger') { const bgColor = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : 'bg-danger'; alertBox.textContent = message; alertBox.className = `fixed bottom-5 right-5 w-auto max-w-sm p-4 rounded-lg shadow-lg text-white text-center z-[80] animate-fade-in ${bgColor}`; alertBox.classList.remove('hidden'); setTimeout(() => { alertBox.classList.add('hidden'); }, 3000); }
+        
+        seatBookingModal.querySelector('#modal-proceed-button').addEventListener('click', () => {
+             if (!arePassengerDetailsValid()) { showAlert("Please fill in all passenger details."); return; }
+             if (!activeBooking.boardingPoint || !activeBooking.droppingPoint) { showAlert("Please select boarding and dropping points."); return; }
+            seatBookingModal.classList.add('hidden');
+            paymentModal.querySelector('#payment-summary').innerHTML = `<div class="flex justify-between"><span>Bus Fare:</span><span>₹${(activeBooking.totalFare - SERVICE_CHARGE).toLocaleString()}</span></div><div class="flex justify-between"><span>Taxes & Fees:</span><span>₹${SERVICE_CHARGE}</span></div><div class="border-t mt-2 pt-2 flex justify-between font-bold text-lg"><span>Total Amount:</span><span class="text-primary-accent">₹${activeBooking.totalFare.toLocaleString()}</span></div>`;
+            paymentModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            updateWalletDisplay();
+        });
+
+        document.getElementById('close-payment-modal').addEventListener('click', () => { paymentModal.classList.add('hidden'); document.body.style.overflow = 'auto'; });
+        
+        let selectedPaymentMethod = 'card';
+        paymentModal.querySelectorAll('.payment-method').forEach(el => { 
+            el.addEventListener('click', () => { 
+                paymentModal.querySelectorAll('.payment-method').forEach(p => p.classList.remove('selected')); 
+                el.classList.add('selected');
+                selectedPaymentMethod = el.dataset.method;
+            }); 
+        });
+        
+        const handleBookingConfirmation = () => {
+            const payButton = document.getElementById('pay-now-button');
+            const newBooking = { ...activeBooking }; // Clone booking details
+            newBooking.bookingDate = new Date();
+            newBooking.status = 'Upcoming';
+            newBooking.busDetails = busData[newBooking.busId];
+            newBooking.fromCity = document.getElementById('from-city').value;
+            newBooking.toCity = document.getElementById('to-city').value;
+            newBooking.travelDate = travelDateInput.value;
+            userBookings.unshift(newBooking); // Add to start of array
+
+            confirmationModal.querySelector('#confirmation-message').textContent = `SMS & Email sent to ${activeBooking.passengerPhone} & ${activeBooking.passengerEmail}`;
+            confirmationModal.querySelector('#confirmation-details').innerHTML = `<p><strong>Thanks for booking, ${Object.values(activeBooking.passengers)[0].name}!</strong></p><div class="flex justify-between"><span>PNR:</span><span class="font-bold">${newBooking.pnr}</span></div><div class="flex justify-between"><span>Bus:</span><span class="font-bold">${newBooking.busDetails.name}</span></div><div class="flex justify-between"><span>Seat(s):</span><span class="font-bold">${newBooking.selectedSeats.map(s => s.id).join(', ')}</span></div><div class="flex justify-between"><span>Boarding:</span><span class="font-bold">${newBooking.boardingPoint}</span></div>`;
+            paymentModal.classList.add('hidden');
+            confirmationModal.classList.remove('hidden');
+            document.getElementById('ecosystem-integrations').classList.remove('hidden');
+            renderHotelRecommendations(newBooking.toCity);
+            
+            payButton.disabled = false; payButton.innerHTML = 'Pay Now';
+            document.getElementById('passenger-form').reset();
+        };
+
+        document.getElementById('pay-now-button').addEventListener('click', () => {
+            const form = document.getElementById('passenger-form');
+            if (!form.checkValidity()) { showAlert('Please fill in your contact details.'); return; }
+            activeBooking.passengerEmail = document.getElementById('passenger-email').value;
+            activeBooking.passengerPhone = document.getElementById('passenger-phone').value;
+            activeBooking.pnr = `BB${Date.now().toString().slice(-6)}`;
+            
+            const payButton = document.getElementById('pay-now-button');
+            payButton.disabled = true;
+            payButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+            if (selectedPaymentMethod === 'wallet') {
+                if (walletBalance >= activeBooking.totalFare) {
+                    setTimeout(() => {
+                        walletBalance -= activeBooking.totalFare;
+                        const cashback = activeBooking.totalFare * 0.02;
+                        walletBalance += cashback;
+                        updateWalletDisplay();
+                        showAlert(`Payment successful! You've received ₹${cashback.toFixed(2)} cashback.`, 'success');
+                        handleBookingConfirmation();
+                    }, 1500);
+                } else {
+                    showAlert('Insufficient wallet balance. Please add funds or choose another payment method.', 'danger');
+                    payButton.disabled = false; payButton.innerHTML = 'Pay Now';
+                }
+            } else {
+                setTimeout(handleBookingConfirmation, 1500);
+            }
+        });
+
+        function startBusTracking() {
+            clearInterval(trackingInterval);
+            tripHistory = [];
+            const fromCity = document.getElementById('from-city').value;
+            const toCity = document.getElementById('to-city').value;
+            const checkpoints = (locationData[fromCity] && locationData[fromCity].checkpoints) || locationData['Default'].checkpoints;
+            const totalCheckpoints = checkpoints.length + 2; // Including start and end
+            let currentCheckpoint = 0;
+
+            const statusEl = document.getElementById('tracking-status');
+            const etaEl = document.getElementById('tracking-eta');
+            const alertsContainer = document.getElementById('tracking-alerts-container');
+            const trackingLine = document.getElementById('tracking-line');
+            const checkpointLabels = document.getElementById('checkpoint-labels');
+            const summaryButton = document.getElementById('view-trip-summary-button');
+            const foodSection = document.getElementById('food-order-section');
+
+            document.getElementById('tracking-from').textContent = fromCity;
+            document.getElementById('tracking-to').textContent = toCity;
+            document.getElementById('tracking-bus-name').textContent = busData[activeBooking.busId].name;
+            
+            trackingLine.innerHTML = '';
+            checkpointLabels.innerHTML = '';
+            alertsContainer.innerHTML = '';
+            summaryButton.classList.add('hidden');
+            foodSection.classList.add('hidden');
+
+            // Re-create bus icon
+            trackingLine.innerHTML = '<div id="tracking-bus-icon" class="dark:text-white"><i class="fas fa-bus"></i></div>';
+            const busIcon = document.getElementById('tracking-bus-icon');
+
+
+            const allPoints = [fromCity, ...checkpoints, toCity];
+            allPoints.forEach((point, index) => {
+                const percent = (index / (allPoints.length - 1)) * 100;
+                trackingLine.innerHTML += `<div class="checkpoint" style="left: ${percent}%" data-index="${index}"></div>`;
+                checkpointLabels.innerHTML += `<span style="flex-basis: ${percent}%" class="text-right">${point}</span>`;
+            });
+            
+            function updateTrackingState() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
+                const progress = (currentCheckpoint / (totalCheckpoints - 1)) * 100;
+                if (busIcon) {
+                    busIcon.style.left = `calc(${progress}% - 12px)`;
+                }
+
+                document.querySelectorAll('#tracking-line .checkpoint').forEach(el => {
+                    if(parseInt(el.dataset.index) <= currentCheckpoint) el.classList.add('active');
+                    else el.classList.remove('active');
+                });
+                
+                // Show food ordering after 1st checkpoint
+                if (currentCheckpoint === 2) {
+                    renderFoodOrderSection(checkpoints[1] || 'Midway Plaza');
+                }
+                
+                const totalDurationMinutes = 8 * 60;
+                const departureTime = busData[activeBooking.busId].departureTime;
+                let etaDate = new Date();
+                etaDate.setHours(departureTime, 0, 0, 0);
+                etaDate.setMinutes(etaDate.getMinutes() + totalDurationMinutes);
+                
+                let currentStatus = "";
+                if (currentCheckpoint === 0) {
+                    currentStatus = "Journey Started";
+                } else if (currentCheckpoint < totalCheckpoints - 1) {
+                    currentStatus = `Crossed ${allPoints[currentCheckpoint]}`;
+                } else {
+                    currentStatus = "Arrived at Destination";
+                    etaEl.textContent = `Arrived at ${timeString}`;
+                    summaryButton.classList.remove('hidden');
+                    foodSection.classList.add('hidden');
+                    clearInterval(trackingInterval);
+                }
+                
+                if (currentStatus) {
+                    statusEl.textContent = currentStatus;
+                    const alertHTML = `<div class="flex items-start gap-3 animate-fade-in"><i class="fas fa-check-circle text-green-500 mt-1"></i><div><p class="font-semibold">${currentStatus}</p><p class="text-xs text-gray-400">${timeString}</p></div></div>`;
+                    alertsContainer.innerHTML = alertHTML + alertsContainer.innerHTML;
+                    tripHistory.push({ status: currentStatus, time: timeString });
+                }
+
+                if (currentCheckpoint < totalCheckpoints - 1) {
+                    etaEl.textContent = `Estimated Arrival: ${etaDate.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' })}`;
+                }
+
+                if (currentCheckpoint > 0 && currentCheckpoint < totalCheckpoints - 1 && Math.random() < 0.2) {
+                     const delayStatus = `Minor delay due to traffic`;
+                     const delayHTML = `<div class="flex items-start gap-3 animate-fade-in"><i class="fas fa-exclamation-triangle text-yellow-500 mt-1"></i><div><p class="font-semibold">${delayStatus}</p><p class="text-xs text-gray-400">${timeString}</p></div></div>`;
+                     alertsContainer.innerHTML = delayHTML + alertsContainer.innerHTML;
+                     tripHistory.push({ status: delayStatus, time: timeString });
+                }
+
+                currentCheckpoint++;
+            }
+            
+            updateTrackingState();
+            trackingInterval = setInterval(() => {
+                if (currentCheckpoint < totalCheckpoints) {
+                    updateTrackingState();
+                } else {
+                    clearInterval(trackingInterval);
+                }
+            }, 4000);
+
+            trackingModal.classList.remove('hidden');
+        }
+
+        document.getElementById('track-bus-button').addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+            startBusTracking();
+        });
+
+        document.getElementById('close-tracking-modal').addEventListener('click', () => {
+            clearInterval(trackingInterval);
+            trackingModal.classList.add('hidden');
+        });
+        
+        document.getElementById('view-trip-summary-button').addEventListener('click', () => {
+            const contentEl = document.getElementById('trip-summary-content');
+            let summaryHTML = '<div class="relative">';
+            tripHistory.forEach(item => {
+                summaryHTML += `
+                    <div class="timeline-item relative flex items-start gap-4 pb-4">
+                        <div class="flex-shrink-0 w-6 h-6 bg-primary-accent rounded-full flex items-center justify-center text-white"><i class="fas fa-check"></i></div>
+                        <div>
+                            <p class="font-bold">${item.status}</p>
+                            <p class="text-sm text-gray-500">${item.time}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            summaryHTML += '</div>';
+            contentEl.innerHTML = summaryHTML;
+            tripSummaryModal.classList.remove('hidden');
+        });
+        document.getElementById('close-summary-modal').addEventListener('click', () => tripSummaryModal.classList.add('hidden'));
+
+        function generateETicketHTML() {
+            const data = busData[activeBooking.busId];
+            const travelDate = new Date(activeBooking.travelDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            let passengersHTML = '';
+             Object.entries(activeBooking.passengers).forEach(([seatId, passenger]) => {
+                passengersHTML += `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee;"><p>${passenger.name} (${passenger.gender}, ${passenger.age} yrs)</p><p>Seat: <strong>${seatId}</strong></p></div>`;
+            });
+            const amenitiesHTML = data.amenities.map(a => `<span style="margin-right: 12px; color: #475569;"><i class="fas ${a.icon}" style="margin-right: 4px;"></i>${a.name}</span>`).join('');
+
+            return `<!DOCTYPE html><html><head><title>Your BusBuddy E-Ticket</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:0;padding:20px;background-color:#f8fafc;color:#1e2d3b;}.container{max-width:800px;margin:auto;background:white;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);overflow:hidden;}.header{background-color:#1e2d3b;color:white;padding:24px;display:flex;justify-content:space-between;align-items:center;}.header h1{font-size:24px;margin:0;font-weight:700;}.accent{color:#60a5fa;}p{margin:0;line-height:1.5;}.pnr-section{text-align:right;}.pnr-section span{font-size:12px;color:#cbd5e1;}.pnr-section strong{font-size:20px;color:white;display:block;}main{padding:24px;}.section{margin-bottom:24px;}.section-title{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600;}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}.grid .value{font-size:16px;font-weight:500;color:#1e2d3b;}.passengers{margin-top:16px;font-size:14px;}.qr-section{display:flex;justify-content:center;align-items:center;padding:20px 0;border-top:1px dashed #e2e8f0;border-bottom:1px dashed #e2e8f0;}.footer{background-color:#f1f5f9;padding:16px 24px;text-align:center;font-size:12px;color:#475569;}</style></head><body><div class="container"><div class="header"><h1><span class="accent">Bus</span>Buddy</h1><div class="pnr-section"><span>PNR</span><strong>${activeBooking.pnr}</strong></div></div><main><div class="section grid"><div><p class="section-title">Route</p><p class="value">${activeBooking.fromCity} &rarr; ${activeBooking.toCity}</p></div><div><p class="section-title">Date of Journey</p><p class="value">${travelDate}</p></div></div><div class="section grid"><div><p class="section-title">Bus Details</p><p class="value">${data.name} (${data.operator})</p></div><div><p class="section-title">Boarding</p><p class="value">${activeBooking.boardingPoint}</p></div></div><div class="section"><p class="section-title">Passenger Details</p><div class="passengers">${passengersHTML}</div></div><div class="qr-section"><img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=PNR:${activeBooking.pnr}" alt="QR Code"></div><div class="section"><p class="section-title">Amenities</p><p class="value" style="font-size: 14px;">${amenitiesHTML}</p></div></main><div class="footer"><p><strong>Have a safe and comfortable journey!</strong><br>For support, contact us at ${document.getElementById('care-number-1').textContent}</p></div></div></body></html>`;
+        }
+        
+        // E-ticket and confirmation modal buttons
+        document.getElementById('eticket-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const ticketHtml = generateETicketHTML();
+            const ticketBlob = new Blob([ticketHtml], { type: 'text/html' });
+            const ticketUrl = URL.createObjectURL(ticketBlob);
+            window.open(ticketUrl, '_blank');
+        });
+        document.getElementById('book-return-button')?.addEventListener('click', () => {
+            const fromCityInput = document.getElementById('from-city');
+            const toCityInput = document.getElementById('to-city');
+            const dateInput = document.getElementById('travel-date');
+            
+            const originalFrom = fromCityInput.value;
+            const originalTo = toCityInput.value;
+            const originalDate = new Date(dateInput.value);
+
+            fromCityInput.value = originalTo;
+            toCityInput.value = originalFrom;
+
+            const returnDate = new Date(originalDate);
+            returnDate.setDate(returnDate.getDate() + 2); // Set return 2 days later
+            dateInput.value = returnDate.toISOString().split('T')[0];
+            
+            confirmationModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+
+            showAlert(`Searching for return buses from ${originalTo} to ${originalFrom}.`, 'success');
+            searchForm.requestSubmit();
+            window.scrollTo(0, 0);
+        });
+
+        // Share Trip Logic
+        document.getElementById('share-trip-button').addEventListener('click', async () => {
+            const shareData = {
+                title: 'Track My BusBuddy Trip',
+                text: `I'm on my way from ${document.getElementById('tracking-from').textContent} to ${document.getElementById('tracking-to').textContent}. You can track my bus live!`,
+                url: window.location.href,
+            };
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback for desktop
+                    navigator.clipboard.writeText(shareData.url);
+                    showAlert('Trip link copied to clipboard!', 'success');
+                }
+            } catch (err) {
+                console.error("Share failed:", err);
+                showAlert('Could not share trip.', 'danger');
+            }
+        });
+        
+        // Feedback Modal Logic
+        document.getElementById('feedback-button')?.addEventListener('click', () => {
+            document.getElementById('feedback-bus-name').textContent = busData[activeBooking.busId].name;
+            feedbackModal.classList.remove('hidden');
+        });
+        document.getElementById('close-feedback-modal').addEventListener('click', () => feedbackModal.classList.add('hidden'));
+
+        let currentRating = 0;
+        document.getElementById('star-rating').addEventListener('mouseover', e => {
+            if (e.target.tagName === 'I') {
+                const rating = e.target.dataset.value;
+                document.querySelectorAll('#star-rating i').forEach(star => {
+                    star.classList.toggle('text-yellow-400', star.dataset.value <= rating);
+                });
+            }
+        });
+        document.getElementById('star-rating').addEventListener('mouseout', () => {
+             document.querySelectorAll('#star-rating i').forEach(star => {
+                star.classList.toggle('text-yellow-400', star.dataset.value <= currentRating);
+             });
+        });
+        document.getElementById('star-rating').addEventListener('click', e => {
+            if (e.target.tagName === 'I') {
+                currentRating = e.target.dataset.value;
+            }
+        });
+        document.getElementById('submit-feedback-button').addEventListener('click', () => {
+            if (currentRating === 0) {
+                showAlert('Please select a star rating.', 'warning');
+                return;
+            }
+            feedbackModal.classList.add('hidden');
+            showAlert('Thank you for your feedback!', 'success');
+            // Reset feedback modal
+            currentRating = 0;
+            document.querySelectorAll('#star-rating i').forEach(star => star.classList.remove('text-yellow-400'));
+            document.getElementById('feedback-comment').value = '';
+        });
+        
+        document.getElementById('close-confirmation-modal').addEventListener('click', () => { confirmationModal.classList.add('hidden'); document.body.style.overflow = 'auto'; });
+
+        document.getElementById('reset-filters').addEventListener('click', () => {
+            filtersContainer.querySelectorAll('input:checked, button.active').forEach(el => {
+                el.checked = false;
+                el.classList.remove('active');
+            });
+            applyFilters();
+        });
+        
+        filtersContainer.addEventListener('click', e => {
+            const btn = e.target.closest('.filter-btn');
+            if (btn) {
+                btn.classList.toggle('active');
+                applyFilters();
+            }
+        });
+        filtersContainer.addEventListener('change', e => {
+            if (e.target.type === 'checkbox') applyFilters();
+        });
+        
+        // --- Auth Logic ---
+        const loginSignupBtn = document.getElementById('login-signup-btn');
+        const userDropdown = document.getElementById('user-dropdown');
+
+        loginSignupBtn.addEventListener('click', () => authModal.classList.remove('hidden'));
+        document.getElementById('close-auth-modal').addEventListener('click', () => authModal.classList.add('hidden'));
+        document.getElementById('show-signup').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('login-view').classList.add('hidden'); document.getElementById('signup-view').classList.remove('hidden'); });
+        document.getElementById('show-login').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('signup-view').classList.add('hidden'); document.getElementById('login-view').classList.remove('hidden'); });
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = e.target.elements[0].value;
+            const name = email.split('@')[0].replace(/\b\w/g, l => l.toUpperCase());
+            currentUser = { name, email };
+            updateAuthUI();
+            authModal.classList.add('hidden');
+            showAlert(`Welcome back, ${name}!`, 'success');
+        });
+        
+        document.getElementById('signup-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = e.target.elements[0].value;
+            const email = e.target.elements[1].value;
+            currentUser = { name, email };
+            updateAuthUI();
+            authModal.classList.add('hidden');
+            showAlert(`Welcome to BusBuddy, ${name}!`, 'success');
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            showAlert(`You have been logged out.`, 'warning');
+            currentUser = null;
+            updateAuthUI();
+        });
+
+        function updateAuthUI() {
+            if (currentUser) {
+                loginSignupBtn.classList.add('hidden');
+                userDropdown.classList.remove('hidden');
+                document.getElementById('user-name-display').textContent = currentUser.name;
+                document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+            } else {
+                loginSignupBtn.classList.remove('hidden');
+                userDropdown.classList.add('hidden');
+            }
+        }
+        
+        // My Bookings Logic
+        document.getElementById('my-bookings-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            renderBookings();
+            myBookingsModal.classList.remove('hidden');
+        });
+        document.getElementById('close-bookings-modal').addEventListener('click', () => myBookingsModal.classList.add('hidden'));
+
+        function renderBookings() {
+            const container = document.getElementById('bookings-list');
+            if (userBookings.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-10">You have no bookings yet.</p>`;
+                return;
+            }
+            container.innerHTML = userBookings.map((booking, index) => {
+                const travelDate = new Date(booking.travelDate);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (travelDate < today && booking.status === 'Upcoming') {
+                    booking.status = 'Completed';
+                }
+                return `
+                <div class="bg-surface-card dark:bg-slate-700 rounded-lg p-4 mb-4 shadow">
+                    <div class="flex justify-between items-center border-b dark:border-slate-600 pb-2 mb-3">
+                        <div>
+                            <p class="font-bold">${booking.fromCity} to ${booking.toCity}</p>
+                            <p class="text-xs text-gray-500">PNR: ${booking.pnr}</p>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-1 rounded-full ${booking.status === 'Upcoming' ? 'bg-blue-100 text-blue-800' : booking.status === 'Canceled' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${booking.status}</span>
+                    </div>
+                    <p class="text-sm"><span class="font-semibold">Date:</span> ${new Date(booking.travelDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                    <p class="text-sm"><span class="font-semibold">Bus:</span> ${booking.busDetails.name}</p>
+                    <p class="text-sm"><span class="font-semibold">Seats:</span> ${booking.selectedSeats.map(s => s.id).join(', ')}</p>
+                    ${booking.status === 'Upcoming' ? `<div class="mt-4 flex gap-2"><button class="cancel-booking-btn text-sm bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600" data-pnr="${booking.pnr}">Cancel Ticket</button></div>` : ''}
+                </div>
+            `}).join('');
+
+             document.querySelectorAll('.cancel-booking-btn').forEach(btn => {
+                btn.addEventListener('click', handleCancelBooking);
+            });
+        }
+        
+        function handleCancelBooking(e) {
+            const pnr = e.target.dataset.pnr;
+            const booking = userBookings.find(b => b.pnr === pnr);
+            if (!booking) return;
+
+            const refundAmount = booking.totalFare * 0.8; // 80% refund policy
+            if (confirm(`Are you sure you want to cancel this booking?\nCancellation charges apply. You will be refunded ₹${refundAmount.toFixed(2)} to your wallet.`)) {
+                booking.status = 'Canceled';
+                walletBalance += refundAmount;
+                updateWalletDisplay();
+                showAlert(`Booking ${pnr} has been canceled. ₹${refundAmount.toFixed(2)} refunded to wallet.`, 'success');
+                renderBookings();
+            }
+        }
+        
+        // SOS button
+        document.getElementById('sos-button').addEventListener('click', () => {
+            if (confirm("Are you in an emergency? This will share your trip details with your emergency contacts.")) {
+                showAlert("Emergency alert sent. Help is on the way.", "danger");
+            }
+        });
+
+        // Gender-specific seat toggle
+        document.getElementById('ladies-seat-toggle').addEventListener('change', (e) => {
+            const showLadies = e.target.checked;
+            document.querySelectorAll('#modal-seat-layout .seat').forEach(seat => {
+                const isWomenSeat = seat.dataset.status === 'women' || seat.dataset.gender === 'Female';
+                if (showLadies) {
+                    if (isWomenSeat) {
+                        seat.style.opacity = '1';
+                    } else {
+                        seat.style.opacity = '0.3';
+                    }
+                } else {
+                    seat.style.opacity = '1';
+                }
+            });
+        });
+
+        // --- Ecosystem Integrations ---
+        function renderHotelRecommendations(city) {
+            const container = document.getElementById('hotel-recommendations');
+            const hotels = [
+                // Replace the 'image' property URLs below with real hotel photos to use your own images
+                { name: `Grand Plaza ${city}`, rating: 4.5, image: 'https://placehold.co/300x200/60a5fa/white?text=Hotel+1' },
+                { name: `${city} Central Suites`, rating: 4.2, image: 'https://placehold.co/300x200/3b82f6/white?text=Hotel+2' }
+            ];
+            container.innerHTML = hotels.map(hotel => `
+                <div class="bg-surface-card dark:bg-slate-700 rounded-lg p-3 shadow-sm">
+                    <img src="${hotel.image}" class="rounded-md w-full h-24 object-cover mb-2">
+                    <p class="font-bold text-sm">${hotel.name}</p>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs text-yellow-500"><i class="fas fa-star"></i> ${hotel.rating}</span>
+                        <a href="https://www.booking.com/searchresults.html?ss=${city}" target="_blank" class="text-xs bg-blue-500 text-white py-1 px-2 rounded hover:bg-blue-600">Book Now</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderFoodOrderSection(stopName) {
+            const foodSection = document.getElementById('food-order-section');
+            document.getElementById('food-stop-info').textContent = `Order for your stop at ${stopName}.`;
+            const menu = [
+                { name: 'Veg Thali', price: 150 },
+                { name: 'Chicken Biryani', price: 220 },
+                { name: 'Masala Dosa', price: 90 }
+            ];
+            document.getElementById('food-menu').innerHTML = menu.map(item => `
+                <label class="flex justify-between items-center p-2 rounded-md hover:bg-gray-200 dark:hover:bg-slate-700">
+                    <div>
+                        <p class="font-semibold">${item.name}</p>
+                        <p class="text-xs text-gray-500">₹${item.price}</p>
+                    </div>
+                    <input type="checkbox" class="form-checkbox h-5 w-5 text-primary-accent rounded" data-price="${item.price}">
+                </label>
+            `).join('');
+            foodSection.classList.remove('hidden');
+        }
+
+        document.getElementById('place-food-order-btn').addEventListener('click', () => {
+            let total = 0;
+            document.querySelectorAll('#food-menu input:checked').forEach(item => {
+                total += parseFloat(item.dataset.price);
+            });
+            if (total === 0) {
+                showAlert('Please select at least one item.', 'warning');
+                return;
+            }
+            if(confirm(`Your total food order is ₹${total}. Proceed to pay from wallet?`)) {
+                if (walletBalance >= total) {
+                    walletBalance -= total;
+                    updateWalletDisplay();
+                    showAlert('Food order placed successfully! It will be ready at your next stop.', 'success');
+                    document.getElementById('food-order-section').classList.add('hidden');
+                } else {
+                    showAlert('Insufficient wallet balance to place order.', 'danger');
+                }
+            }
+        });
+
+        // --- I18n ---
+        const translations = {
+            en: {
+                nav_bus_tickets: "Bus Tickets",
+                nav_helpline: "24/7 Helpline",
+                nav_login_signup: "Login / Sign Up",
+                nav_my_bookings: "My Bookings",
+                nav_my_rewards: "My Rewards",
+                nav_logout: "Logout",
+                hero_title: "Your Journey, Our Priority.",
+                hero_subtitle: "Find the best bus deals across India, effortlessly.",
+                form_from: "From",
+                form_to: "To",
+                form_date: "Date",
+                form_pax: "Pax",
+                form_search: "Search",
+                form_origin: "Origin",
+                form_destination: "Destination",
+                perk_safe: "Safe & Secure",
+                perk_fast: "Fast Booking",
+                perk_support: "24/7 Support",
+                perk_prices: "Best Prices",
+                results_title: "Showing buses for ",
+                results_none: "No buses found. Please try changing your filters or search.",
+                filter_title: "Filter By",
+                filter_reset: "RESET ALL",
+                filter_departure: "Departure Time",
+                filter_before_12: "Before 12 PM",
+                filter_12_6: "12-6 PM",
+                filter_after_6: "After 6 PM",
+                filter_bus_type: "Bus Type",
+                filter_ac: "AC",
+                filter_non_ac: "Non-AC",
+                filter_seat_type: "Seat Type",
+                filter_seater: "Seater",
+                filter_sleeper: "Sleeper",
+                filter_operator: "Bus Operator",
+                booking_select_seats: "Select Your Seats",
+                legend_available: "Available",
+                legend_selected: "Selected",
+                legend_booked: "Booked",
+                legend_ladies: "Ladies",
+                booking_ladies_seats: "Ladies seats",
+                booking_reviews: "Reviews",
+                booking_summary: "Booking Summary",
+                booking_proceed: "Proceed to Payment",
+                payment_title: "Complete Your Payment",
+                payment_contact_info: "Contact Information",
+                payment_email_placeholder: "Email Address (for E-Ticket)",
+                payment_phone_placeholder: "Mobile Number (for SMS confirmation)",
+                payment_select_method: "Select Payment Method",
+                payment_card: "Credit/Debit Card",
+                payment_upi: "UPI",
+                payment_netbanking: "Net Banking",
+                payment_wallet: "BusBuddy Wallet",
+                payment_wallet_cashback: "2% Cashback on all bookings!",
+                payment_fare_details: "Fare Details",
+                payment_pay_now: "Pay Now",
+                confirm_title: "Booking Confirmed!",
+                confirm_book_stay: "Complete Your Trip: Book a Stay!",
+                confirm_track_bus: "Track Your Bus",
+                confirm_close: "Close",
+                track_title: "Live Bus Tracking",
+                track_connecting: "Connecting to GPS...",
+                track_calculating_eta: "Calculating Estimated Time of Arrival...",
+                track_view_summary: "View Summary",
+                track_share_trip: "Share Trip",
+                track_live_updates: "Live Updates",
+                food_title: "Pre-order Your Meal",
+                food_place_order: "Place Order",
+                auth_login_title: "Login to BusBuddy",
+                auth_email_placeholder: "Email",
+                auth_password_placeholder: "Password",
+                auth_login_btn: "Login",
+                auth_no_account: "Don't have an account?",
+                auth_signup_link: "Sign up",
+                auth_signup_title: "Create Account",
+                auth_name_placeholder: "Full Name",
+                auth_signup_btn: "Sign Up",
+                auth_have_account: "Already have an account?",
+                auth_login_link: "Login",
+                bookings_title: "My Bookings"
+            },
+            hi: {
+                nav_bus_tickets: "बस टिकट",
+                nav_helpline: "24/7 हेल्पलाइन",
+                nav_login_signup: "लॉगिन / साइन अप",
+                nav_my_bookings: "मेरी बुकिंग",
+                nav_my_rewards: "मेरे पुरस्कार",
+                nav_logout: "लॉगआउट",
+                hero_title: "आपकी यात्रा, हमारी प्राथमिकता।",
+                hero_subtitle: "पूरे भारत में सर्वोत्तम बस सौदे आसानी से पाएं।",
+                form_from: "से",
+                form_to: "तक",
+                form_date: "दिनांक",
+                form_pax: "यात्री",
+                form_search: "खोजें",
+                form_origin: "मूल",
+                form_destination: "गंतव्य",
+                perk_safe: "सुरक्षित",
+                perk_fast: "तेज बुकिंग",
+                perk_support: "24/7 सहायता",
+                perk_prices: "सर्वोत्तम मूल्य",
+                results_title: "के लिए बसें दिखा रहा है ",
+                results_none: "कोई बस नहीं मिली। कृपया अपने फ़िल्टर या खोज को बदलने का प्रयास करें।",
+                filter_title: "इसके अनुसार छाँटें",
+                filter_reset: "सभी रीसेट करें",
+                filter_departure: "प्रस्थान का समय",
+                filter_before_12: "दोपहर 12 बजे से पहले",
+                filter_12_6: "12-6 अपराह्न",
+                filter_after_6: "शाम 6 बजे के बाद",
+                filter_bus_type: "बस का प्रकार",
+                filter_ac: "एसी",
+                filter_non_ac: "गैर-एसी",
+                filter_seat_type: "सीट का प्रकार",
+                filter_seater: "सीटर",
+                filter_sleeper: "स्लीपर",
+                filter_operator: "बस ऑपरेटर",
+                booking_select_seats: "अपनी सीटें चुनें",
+                legend_available: "उपलब्ध",
+                legend_selected: "चयनित",
+                legend_booked: "बुक किया हुआ",
+                legend_ladies: "देवियों",
+                booking_ladies_seats: "देवियों की सीटें",
+                booking_reviews: "समीक्षाएं",
+                booking_summary: "बुकिंग सारांश",
+                booking_proceed: "भुगतान करने के लिए आगे बढ़ें",
+                payment_title: "अपना भुगतान पूरा करें",
+                payment_contact_info: "संपर्क जानकारी",
+                payment_email_placeholder: "ईमेल पता (ई-टिकट के लिए)",
+                payment_phone_placeholder: "मोबाइल नंबर (एसएमएस पुष्टि के लिए)",
+                payment_select_method: "भुगतान विधि चुनें",
+                payment_card: "क्रेडिट/डेबिट कार्ड",
+                payment_upi: "यूपीआई",
+                payment_netbanking: "नेट बैंकिंग",
+                payment_wallet: "बस-बडी वॉलेट",
+                payment_wallet_cashback: "सभी बुकिंग पर 2% कैशबैक!",
+                payment_fare_details: "किराया विवरण",
+                payment_pay_now: "अभी भुगतान करें",
+                confirm_title: "बुकिंग की पुष्टि!",
+                confirm_book_stay: "अपनी यात्रा पूरी करें: एक स्टे बुक करें!",
+                confirm_track_bus: "अपनी बस को ट्रैक करें",
+                confirm_close: "बंद करें",
+                track_title: "लाइव बस ट्रैकिंग",
+                track_connecting: "जीपीएस से कनेक्ट हो रहा है...",
+                track_calculating_eta: "अनुमानित आगमन समय की गणना की जा रही है...",
+                track_view_summary: "सारांश देखें",
+                track_share_trip: "यात्रा साझा करें",
+                track_live_updates: "लाइव अपडेट",
+                food_title: "अपना भोजन प्री-ऑर्डर करें",
+                food_place_order: "आदेश दें",
+                auth_login_title: "बस-बडी में लॉगिन करें",
+                auth_email_placeholder: "ईमेल",
+                auth_password_placeholder: "पासवर्ड",
+                auth_login_btn: "लॉगिन",
+                auth_no_account: "खाता नहीं है?",
+                auth_signup_link: "साइन अप करें",
+                auth_signup_title: "खाता बनाएं",
+                auth_name_placeholder: "पूरा नाम",
+                auth_signup_btn: "साइन अप करें",
+                auth_have_account: "पहले से ही एक खाता है?",
+                auth_login_link: "लॉगिन",
+                bookings_title: "मेरी बुकिंग"
+            },
+            ta: {
+                nav_bus_tickets: "பேருந்து டிக்கெட்டுகள்",
+                nav_helpline: "24/7 ஹெல்ப்லைன்",
+                nav_login_signup: "உள்நுழை / பதிவுசெய்",
+                nav_my_bookings: "எனது முன்பதிவுகள்",
+                nav_my_rewards: "எனது வெகுமதிகள்",
+                nav_logout: "வெளியேறு",
+                hero_title: "உங்கள் பயணம், எங்கள் முன்னுரிமை.",
+                hero_subtitle: "இந்தியா முழுவதும் சிறந்த பேருந்து ஒப்பந்தங்களை எளிதாகக் கண்டறியவும்.",
+                form_from: "இருந்து",
+                form_to: "க்கு",
+                form_date: "தேதி",
+                form_pax: "பயணிகள்",
+                form_search: "தேடு",
+                form_origin: "புறப்படும் இடம்",
+                form_destination: "சேருமிடம்",
+                perk_safe: "பாதுப்பானது",
+                perk_fast: "வேகமான முன்பதிவு",
+                perk_support: "24/7 ஆதரவு",
+                perk_prices: "சிறந்த விலைகள்",
+                results_title: "க்கான பேருந்துகளைக் காட்டுகிறது ",
+                results_none: "பேருந்துகள் எதுவும் இல்லை. உங்கள் வடிப்பான்களை மாற்ற முயற்சிக்கவும்.",
+                filter_title: "வடிகட்டு",
+                filter_reset: "அனைத்தையும் மீட்டமை",
+                filter_departure: "புறப்படும் நேரம்",
+                filter_before_12: "காலை 12 மணிக்குள்",
+                filter_12_6: "12-6 மாலை",
+                filter_after_6: "மாலை 6 மணிக்கு மேல்",
+                filter_bus_type: "பேருந்து வகை",
+                filter_ac: "ஏசி",
+                filter_non_ac: "ஏசி அல்லாதது",
+                filter_seat_type: "இருக்கை வகை",
+                filter_seater: "சீட்டர்",
+                filter_sleeper: "ஸ்லீப்பர்",
+                filter_operator: "பேருந்து ஆபரேட்டர்",
+                booking_select_seats: "உங்கள் இருக்கைகளைத் தேர்ந்தெடுக்கவும்",
+                legend_available: "கிடைக்கிறது",
+                legend_selected: "தேர்ந்தெடுக்கப்பட்டது",
+                legend_booked: "முன்பதிவு செய்யப்பட்டது",
+                legend_ladies: "பெண்கள்",
+                booking_ladies_seats: "பெண்கள் இருக்கைகள்",
+                booking_reviews: "விமர்சனங்கள்",
+                booking_summary: "முன்பதிவு சுருக்கம்",
+                booking_proceed: "பணம் செலுத்த தொடரவும்",
+                payment_title: "உங்கள் கட்டணத்தை முடிக்கவும்",
+                payment_contact_info: "தொடர்பு தகவல்",
+                payment_email_placeholder: "மின்னஞ்சல் முகவரி (இ-டிக்கெட்டிற்கு)",
+                payment_phone_placeholder: "மொபைல் எண் (SMS உறுதிப்படுத்தலுக்கு)",
+                payment_select_method: "பணம் செலுத்தும் முறையைத் தேர்ந்தெடுக்கவும்",
+                payment_card: "கிரெடிட்/டெபிட் கார்டு",
+                payment_upi: "யுபிஐ",
+                payment_netbanking: "நிகர வங்கி",
+                payment_wallet: "பஸ்படி வாலட்",
+                payment_wallet_cashback: "அனைத்து முன்பதிவுகளுக்கும் 2% கேஷ்பேக்!",
+                payment_fare_details: "கட்டண விவரங்கள்",
+                payment_pay_now: "இப்போது செலுத்து",
+                confirm_title: "முன்பதிவு உறுதி செய்யப்பட்டது!",
+                confirm_book_stay: "உங்கள் பயணத்தை முடிக்கவும்: ஒரு தங்குமிடத்தை பதிவு செய்யுங்கள்!",
+                confirm_track_bus: "உங்கள் பேருந்தைக் கண்காணிக்கவும்",
+                confirm_close: "மூடு",
+                track_title: "லைவ் பஸ் கண்காணிப்பு",
+                track_connecting: "ஜிபிஎஸ் உடன் இணைக்கப்படுகிறது...",
+                track_calculating_eta: "மதிப்பிடப்பட்ட வருகை நேரம் கணக்கிடப்படுகிறது...",
+                track_view_summary: "சுருக்கத்தைப் பார்க்கவும்",
+                track_share_trip: "பயணத்தைப் பகிரவும்",
+                track_live_updates: "நேரடி அறிவிப்புகள்",
+                food_title: "உங்கள் உணவை முன்கூட்டியே ஆர்டர் செய்யுங்கள்",
+                food_place_order: "ஆர்டர் செய்யுங்கள்",
+                auth_login_title: "பஸ்படியில் உள்நுழைக",
+                auth_email_placeholder: "மின்னஞ்சல்",
+                auth_password_placeholder: "கடவுச்சொல்",
+                auth_login_btn: "உள்நுழை",
+                auth_no_account: "கணக்கு இல்லையா?",
+                auth_signup_link: "பதிவுசெய்",
+                auth_signup_title: "கணக்கை உருவாக்கு",
+                auth_name_placeholder: "முழு பெயர்",
+                auth_signup_btn: "பதிவுசெய்",
+                auth_have_account: "ஏற்கனவே கணக்கு உள்ளதா?",
+                auth_login_link: "உள்நுழை",
+                bookings_title: "எனது முன்பதிவுகள்"
+            }
+        };
+
+        function translatePage(lang) {
+            document.querySelectorAll('[data-i18n-key]').forEach(el => {
+                const key = el.getAttribute('data-i18n-key');
+                if(translations[lang] && translations[lang][key]) {
+                   el.innerText = translations[lang][key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder-key]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder-key');
+                 if(translations[lang] && translations[lang][key]) {
+                   el.placeholder = translations[lang][key];
+                }
+            });
+        }
+        
+        function setLanguage(lang) {
+            localStorage.setItem('language', lang);
+            document.getElementById('current-lang').textContent = lang.toUpperCase();
+            translatePage(lang);
+        }
+
+        document.getElementById('language-menu').addEventListener('click', e => {
+            if (e.target.classList.contains('lang-option')) {
+                e.preventDefault();
+                setLanguage(e.target.dataset.lang);
+            }
+        });
+
+        // --- Initial Load ---
+        const savedLang = localStorage.getItem('language') || 'en';
+        setLanguage(savedLang);
+        setupInitialDate();
+        generateAndSetCareNumbers();
+        updateWalletDisplay();
+        updateAuthUI();
+
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Change the icons inside the button based on previous settings
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-system: dark)').matches)) {
+            themeToggleLightIcon.classList.remove('hidden');
+        } else {
+            themeToggleDarkIcon.classList.remove('hidden');
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            // toggle icons inside button
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+
+            // if set via local storage previously
+            if (localStorage.getItem('color-theme')) {
+                if (localStorage.getItem('color-theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                }
+            // if NOT set via local storage previously
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                }
+            }
+        });
+    });
+    </script>
+</body>
+</html>
